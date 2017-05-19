@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "---\noutput: html_document\n---\n\n## May 2017\n\nTo avoid errors in QGIS-R integration due to 'user/local/lib/R/site-library is not writable', \nedit `etc/R/Renviron`.\nhttp://stackoverflow.com/questions/2698269/how-do-you-change-library-location-in-r\nhttps://cran.r-project.org/doc/manuals/r-devel/R-admin.html#Managing-libraries\nhttp://stackoverflow.com/questions/15170399/changing-r-default-library-path-using-libpaths-in-rprofile-site-fails-to-work\n    \n    R_LIBS_SITE=${R_LIBS_SITE-'/home/alessandro/Rlibs:/usr/local/lib/R/site-library:/usr/lib/R/site-library:/usr/lib/R/library'}\n\n## More info at\nhttps://docs.qgis.org/2.18/en/docs/user_manual/processing/scripts.html\n\nhttps://docs.qgis.org/2.18/en/docs/user_manual/processing/3rdParty.html#r-creating-r-scripts\n\nhttps://docs.qgis.org/2.18/en/docs/training_manual/processing/r_intro.html\n\nhttps://docs.qgis.org/2.18/en/docs/training_manual/processing/r_syntax.html#r-syntax\n\n# Available Learners:\nhttps://topepo.github.io/caret/available-models.html\n",
+    "created" : 1495199833999.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2592592049",
+    "id" : "DAEC068B",
+    "lastKnownWriteTime" : 1495145949,
+    "last_content_update" : 1495145949,
+    "path" : "~/projects/r-packages/qgis-r/README.md",
+    "project_path" : "README.md",
+    "properties" : {
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "markdown"
+}

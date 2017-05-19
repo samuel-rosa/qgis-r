@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "##Modelling=group\n##Spatial environmental modelling=name\n##Observations=vector\n##Target=field Observations\n##Weights=field Observations\n##Covariates=multiple raster\n##Learner=string rf\n##Predictions=output raster\n##Uncertainty=output raster\n##Metadata=output table\n\n# Load necessary libraries ----\nlibrary(sp)\nlibrary(raster)\nlibrary(caret)\nlibrary(snow)\n\n# Funtion to compute the Shannon entropy ----\nentropy <-\n  function (x) {\n    - sum(x * log(x, base = length(x)), na.rm = TRUE)\n  }\n\n# Function to compute the confusion index ----\nconfusion <-\n  function (x) {\n    1 - diff(sort(x, decreasing = TRUE)[2:1])\n  }\n\n# Calibrate statistical learner ----\nlearner_fit <- train( \n  y = Observations[[Target]], weights = Observations[[Weights]],\n  x = Observations@data[, !colnames(Observations@data) %in% c(Target, Weights)],\n  method = Learner, tuneLength = 3,\n  # preProcess = c(\"center\", \"scale\"), \n  trControl= trainControl(method = \"LOOCV\"))\n\n# Prepare for spatial predictions ----\nif (is.numeric(Observations[[Target]])) {\n  index <- 1\n  type <- \"raw\"\n} else {\n  index <- 1:nlevels(Observations[[Target]])\n  type <- \"prob\"\n}\n\n# Make spatial predictions ----\nbeginCluster()\nprediction <- \n  clusterR(\n    brick(Covariates), raster::predict, \n    args = list(model = learner_fit, type = type, index = index)\n  )\nendCluster()\n\n# Compute predictions and prediction uncertainty ----\nif (type == \"prob\") {\n  Predictions <- as.factor(calc(x = prediction, fun = nnet::which.is.max))\n  rat <- levels(Predictions)[[1]]\n  rat$class <- levels(Observations[[Target]])\n  levels(Predictions) <- rat\n  Uncertainty <-\n    brick(\n      calc(x = prediction, fun = max),\n      calc(x = prediction, fun = entropy),\n      calc(x = prediction, fun = confusion)\n    )\n  Metadata <- \n    rbind(\n      c(\"Predictions\", \n        paste(\"Predicted class (\", paste(apply(rat, 1, paste, collapse = \"=\"), collapse = \"; \"), \")\", sep = \"\")),\n      c(\"Uncertainty\", \n        \"Band 1 = Theoretical purity (0-1); Band 2 = Shannon entropy (0-1); Band 3 = Confusion index (0-1)\"),\n      c(\"Statistical learner\", \n        paste(learner_fit$method[1], \" = \", learner_fit$modelInfo$label[1], \" (\", learner_fit$modelType[1], \")\", \n              sep = \"\")),\n      c(\"Cross-validation\", \n        paste(\"Accuracy = \", round(learner_fit$results$Accuracy[nrow(learner_fit$results)], 4), \"; \",\n              \"Kappa = \", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), \n              sep = \"\"))\n    )\n  colnames(Metadata) <- c(\"Item\", \"Description\")\n} else {\n  Predictions <- prediction\n  \n  Uncertainty <- prediction # temporary\n  \n  Metadata <- \n    rbind(\n      c(\"Predictions\",  paste(\"Predicted values (\", Target, \")\", sep = \"\")),\n      \n      c(\"Uncertainty\", paste(\"Predicted values (\", Target, \")\", sep = \"\")), # temporary\n      \n      c(\"Statistical learner\",\n      paste(learner_fit$method[1], \" = \", learner_fit$modelInfo$label[1], \" (\", learner_fit$modelType[1], \")\",\n      sep = \"\")),\n      c(\"Cross-validation\",\n      paste(\"RMSE = \", round(learner_fit$results$RMSE[nrow(learner_fit$results)], 4), \"; \",\n      \"Rsquared = \", round(learner_fit$results$Rsquared[nrow(learner_fit$results)], 4), sep = \"\"))\n    )\n  colnames(Metadata) <- c(\"Item\", \"Description\")\n}\n\n# Output ----\nPredictions\nUncertainty\nMetadata\n",
+    "created" : 1495192687511.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "907866589",
+    "id" : "F92B4723",
+    "lastKnownWriteTime" : 1495215887,
+    "last_content_update" : 1495215887934,
+    "path" : "~/projects/r-packages/qgis-r/code/spatial-modelling.r",
+    "project_path" : "code/spatial-modelling.r",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
