@@ -77,7 +77,10 @@ if (type == "prob") {
       c("Cross-validation", 
         paste("Accuracy = ", round(learner_fit$results$Accuracy[nrow(learner_fit$results)], 4), "; ",
               "Kappa = ", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), 
-              sep = ""))
+              sep = "")),
+      c("Covariate importance", 
+        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
+              collapse = "; "))
     )
   colnames(Metadata) <- c("Item", "Description")
 } else {
@@ -96,7 +99,10 @@ if (type == "prob") {
       sep = "")),
       c("Cross-validation",
       paste("RMSE = ", round(learner_fit$results$RMSE[nrow(learner_fit$results)], 4), "; ",
-      "Rsquared = ", round(learner_fit$results$Rsquared[nrow(learner_fit$results)], 4), sep = ""))
+      "Rsquared = ", round(learner_fit$results$Rsquared[nrow(learner_fit$results)], 4), sep = "")),
+      c("Covariate importance", 
+        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
+              collapse = "; "))
     )
   colnames(Metadata) <- c("Item", "Description")
 }
