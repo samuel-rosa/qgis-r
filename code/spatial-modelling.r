@@ -27,13 +27,25 @@ confusion <-
     1 - diff(sort(x, decreasing = TRUE)[2:1])
   }
 
+# Look for factor covariates ----
+# I am not sure if factor covariates must be specified as such.
+covar_cols <- which(!colnames(Observations@data) %in% c(Target, Weights))
+# if (any(sapply(Observations@data[, covar_cols], is.factor))) {
+#   is_char <- which(sapply(Observations@data[, covar_cols], is.factor))
+#   is_char <- match(names(is_char), sapply(Covariates, names))
+#   for (i in 1:length(is_char)) {
+#     if (!is.factor(Covariates[[is_char[i]]])) {
+#       Covariates[[is_char[i]]] <- as.factor(Covariates[[is_char[i]]]) 
+#     }
+#   }
+# }
+
 # Calibrate statistical learner ----
-learner_fit <- train( 
-  y = Observations[[Target]], weights = Observations[[Weights]],
-  x = Observations@data[, !colnames(Observations@data) %in% c(Target, Weights)],
-  method = Learner, tuneLength = 3,
-  # preProcess = c("center", "scale"), 
-  trControl= trainControl(method = "LOOCV"))
+# We must pass a formula to avoid the errors reported in https://stackoverflow.com/a/25272143/3365410 
+form <- formula(paste(Target, " ~ ", paste(colnames(Observations@data[, covar_cols]), collapse = " + ")))
+learner_fit <- train(
+  form = form, data = Observations@data, weights = Observations[[Weights]], method = Learner, tuneLength = 3,
+  trControl = trainControl(method = "LOOCV"))
 
 # Prepare for spatial predictions ----
 if (is.numeric(Observations[[Target]])) {
@@ -47,10 +59,7 @@ if (is.numeric(Observations[[Target]])) {
 # Make spatial predictions ----
 beginCluster()
 prediction <- 
-  clusterR(
-    brick(Covariates), raster::predict, 
-    args = list(model = learner_fit, type = type, index = index)
-  )
+  clusterR(brick(Covariates), raster::predict, args = list(model = learner_fit, type = type, index = index))
 endCluster()
 
 # Compute predictions and prediction uncertainty ----
