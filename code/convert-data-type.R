@@ -10,6 +10,10 @@ library(stringr)
 
 # Identify fields ----
 Field <- stringr::str_split_fixed(string = Field, pattern = " ", n = Inf)
+if (!all(Field %in% colnames(Layer@data))) {
+  error <- Field[which(!Field %in% colnames(Layer@data))]
+  stop (paste("Attribute table does not containg Field", paste(error, collapse = " ")))
+}
 Field <- colnames(Layer@data) %in% Field
 
 # Process fields ----
