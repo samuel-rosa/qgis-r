@@ -1,5 +1,5 @@
 ##Vector processing=group
-##Convert data type=name
+##Convert vector data type=name
 ##Layer=vector
 ##Field=multiple field Layer
 ##Type=selectionReal;Integer;String
