@@ -1,0 +1,16 @@
+{"ALG_DESC": "Convert the data type of selected fields of an attribute table.", 
+
+"ALG_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
+
+"ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
+
+"ALG_VERSION": "1.1-0",
+
+"Layer": "An input point vector layer.",
+
+"Field": "A text string specifying the field (or fields) of the attribute table of the point vector layer passed to <b>Layer</b> that contains the data that you want to process. For multiple fields, separate their names using a single space. Example: <font face='monospace' color='magenta'>field1 field2 field3</font>.",
+
+"Type": "The target data type for the field (or fields) that you specified in <b>Field</b>. Options are <font face='monospace' color='magenta'>Real</font>, <font face='monospace' color='magenta'>Integer</font> and <font face='monospace' color='magenta'>String</font>, produced by R via <pre>as.numeric</pre>, <pre>as.integer</pre> and <pre>as.character</pre>, respectively.",
+
+"Output": "An output point vector layer."
+}
