@@ -5,7 +5,7 @@
 ##Weights=field Observations
 ##Validation=field Observations
 ##Covariates=multiple raster
-##Learner=selectionClassification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R)
+##Learner=selectionClassification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines with Radial Basis Function Kernel (C & R)
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
@@ -22,12 +22,29 @@ if (any(Observations[[Validation]]) == 1) {
   idx <- which(Observations[[Validation]] == 1)
   val_data <- Observations[idx, ]@data
   Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
+  Observations[[Target]] <- as.factor(as.character(Observations[[Target]]))
+} else {
+  validate <- FALSE
 }
 
-# Identify learner ----
-model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf")
+# Identify the type of spatial predicions ----
+if (is.numeric(Observations[[Target]])) {
+  index <- 1
+  type <- "raw"
+} else {
+  index <- 1:nlevels(Observations[[Target]])
+  type <- "prob"
+}
+
+# Identify learner and set arguments ----
+model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadial")
 Learner <- Learner + 1
 model <- model[Learner]
+if (model == "svmRadial" & type == "prob") {
+    prob.model <- TRUE
+} else {
+  prob.model <- FALSE
+}
 
 # Funtion to compute the Shannon entropy ----
 entropy <-
@@ -43,7 +60,7 @@ confusion <-
 
 # Look for factor covariates ----
 # I am not sure if factor covariates must be specified as such.
-covar_cols <- which(!colnames(Observations@data) %in% c(Target, Weights))
+covar_cols <- which(!colnames(Observations@data) %in% c(Target, Weights, Validation))
 # if (any(sapply(Observations@data[, covar_cols], is.factor))) {
 #   is_char <- which(sapply(Observations@data[, covar_cols], is.factor))
 #   is_char <- match(names(is_char), sapply(Covariates, names))
@@ -57,20 +74,23 @@ covar_cols <- which(!colnames(Observations@data) %in% c(Target, Weights))
 # Calibrate statistical learner ----
 # We must pass a formula to avoid the errors reported in https://stackoverflow.com/a/25272143/3365410 
 form <- formula(paste(Target, " ~ ", paste(colnames(Observations@data[, covar_cols]), collapse = " + ")))
-learner_fit <- train(
-  form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
-  trControl = trainControl(method = "LOOCV"))
-
-# Prepare for spatial predictions ----
-if (is.numeric(Observations[[Target]])) {
-  index <- 1
-  type <- "raw"
+# rpart does not deal with parameters that are supposed to be passed to other models because they are checked
+# against a list of valid function arguments.
+if (model == "rpart") {
+  learner_fit <- train(
+    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
+    trControl = trainControl(method = "LOOCV")
+  )
 } else {
-  index <- 1:nlevels(Observations[[Target]])
-  type <- "prob"
+  learner_fit <- train(
+    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
+    trControl = trainControl(method = "LOOCV"), 
+    prob.model = prob.model # svmRadial
+  )
 }
 
-# Validation, if necessary ----
+
+# Perform validation if validation data is available ----
 if (validate) {
   pred <- predict(learner_fit, val_data)
   if (type == "raw") {
@@ -83,7 +103,8 @@ if (validate) {
 # Make spatial predictions ----
 beginCluster()
 prediction <- 
-  clusterR(brick(Covariates), raster::predict, args = list(model = learner_fit, type = type, index = index))
+  clusterR(brick(Covariates), raster::predict, 
+           args = list(model = learner_fit, type = type, index = index))
 endCluster()
 
 # Compute predictions and prediction uncertainty ----

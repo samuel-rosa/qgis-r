@@ -22,6 +22,7 @@ if (any(Observations[[Validation]]) == 1) {
   idx <- which(Observations[[Validation]] == 1)
   val_data <- Observations[idx, ]@data
   Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
+  Observations[[Target]] <- as.factor(as.character(Observations[[Target]]))
 } else {
   validate <- FALSE
 }
