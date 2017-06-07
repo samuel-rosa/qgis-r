@@ -18,9 +18,10 @@ library(snow)
 
 # Identify validation observations ----
 if (any(Observations[[Validation]]) == 1) {
+  validate <- TRUE
   idx <- which(Observations[[Validation]] == 1)
-  val_data <- Observations[idx, ]
-  Observations <- Observations[!idx, ]
+  val_data <- Observations[idx, ]@data
+  Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
 }
 
 # Identify learner ----
@@ -69,6 +70,16 @@ if (is.numeric(Observations[[Target]])) {
   type <- "prob"
 }
 
+# Validation, if necessary ----
+if (validate) {
+  pred <- predict(learner_fit, val_data)
+  if (type == "raw") {
+    
+  } else {
+    error <- confusionMatrix(data = pred, reference = val_data[[Target]])
+  }
+}
+
 # Make spatial predictions ----
 beginCluster()
 prediction <- 
@@ -97,13 +108,22 @@ if (type == "prob") {
         paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")", 
               sep = "")),
       c("Cross-validation", 
-        paste("Accuracy = ", round(learner_fit$results$Accuracy[nrow(learner_fit$results)], 4), "; ",
-              "Kappa = ", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), 
+        paste("Overall accuracy = ", round(learner_fit$results$Accuracy[nrow(learner_fit$results)], 4), "; ",
+              "Overall kappa = ", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), 
               sep = "")),
-      c("Covariate importance", 
+      c("Covariate importance",
         paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
               collapse = "; "))
     )
+  if (validate) {
+    Metadata <- 
+      rbind(
+        Metadata,
+        c("Validation", 
+          paste("Overall accuracy = ", round(error$overall[["Accuracy"]], 4), "; ",
+                "Overall kappa = ", round(error$overall[["Kappa"]], 4), sep = ""))
+      )
+  }
   colnames(Metadata) <- c("Item", "Description")
 } else {
   Predictions <- prediction
