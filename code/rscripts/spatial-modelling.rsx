@@ -4,7 +4,7 @@
 ##Target=field Observations
 ##Weights=field Observations
 ##Covariates=multiple raster
-##Learner=string rf
+##Learner=selectionClassification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R)
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
@@ -14,6 +14,11 @@ library(sp)
 library(raster)
 library(caret)
 library(snow)
+
+# Identify learner ----
+model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf")
+Learner <- Learner + 1
+model <- model[Learner]
 
 # Funtion to compute the Shannon entropy ----
 entropy <-
@@ -44,7 +49,7 @@ covar_cols <- which(!colnames(Observations@data) %in% c(Target, Weights))
 # We must pass a formula to avoid the errors reported in https://stackoverflow.com/a/25272143/3365410 
 form <- formula(paste(Target, " ~ ", paste(colnames(Observations@data[, covar_cols]), collapse = " + ")))
 learner_fit <- train(
-  form = form, data = Observations@data, weights = Observations[[Weights]], method = Learner, tuneLength = 3,
+  form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
   trControl = trainControl(method = "LOOCV"))
 
 # Prepare for spatial predictions ----

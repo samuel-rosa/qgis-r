@@ -14,7 +14,7 @@
 
 "Covariates": "A set of input raster layers used as covariates for making spatial predictions. The raster layers must have the same spatial resolution, spatial extent and coordinate reference system (CRS).",
 
-"Learner": "A text string specifying the statistical learner that should be used for learning the correlation between target variable and covariates and making spatial predictions. Defaults to <font face='monospace' color='magenta'>rf</font>, that is, the random forest statistical learner. Common options include <font face='monospace' color='magenta'>lm</font> (linear regression), <font face='monospace' color='magenta'>multinom</font> (multinomial logistic regression), <font face='monospace' color='magenta'>rpart</font> (classification and regression tree) and <font face='monospace' color='magenta'>nnet</font> (neural network). The full list of permissible statistical learners is available on the website of the caret package (https://topepo.github.io/caret/available-models.html).",
+"Learner": "The statistical learner that should be used for learning the correlation between target variable and covariates and making spatial predictions. Defaults to <font face='monospace' color='magenta'>Classification and Regression Tree (C & R)</font>. The type of a learner is specified between parentheses after the learner name, where <font face='monospace' color='magenta'>C</font> means <i>classification</i> and <font face='monospace' color='magenta'>R</font> means <i>regression</i>.",
 
 "Predictions": "A raster layer with the spatial predictions of the target variable.",
 
