@@ -5,6 +5,7 @@
 ##Weights=field Observations
 ##Covariates=multiple raster
 ##Learner=string rf
+##Validation=vector
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
