@@ -3,6 +3,7 @@
 ##Observations=vector
 ##Target=field Observations
 ##Weights=field Observations
+##Validation=field Observations
 ##Covariates=multiple raster
 ##Learner=selectionClassification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R)
 ##Predictions=output raster
@@ -14,6 +15,13 @@ library(sp)
 library(raster)
 library(caret)
 library(snow)
+
+# Identify validation observations ----
+if (any(Observations[[Validation]]) == 1) {
+  idx <- which(Observations[[Validation]] == 1)
+  val_data <- Observations[idx, ]
+  Observations <- Observations[!idx, ]
+}
 
 # Identify learner ----
 model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf")
