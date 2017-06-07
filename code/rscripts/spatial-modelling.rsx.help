@@ -4,7 +4,7 @@
 
 "ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
 
-"ALG_VERSION": "1.1-0",
+"ALG_VERSION": "1.2-0",
 
 "Observations": "A point vector layer with an attribute table containing data of the target variable and its corresponding covariates, as well as the observation weights. Fields of the attribute table containing covariate data MUST be named as to match the names of the set of input rasters passed to <b>Covariates</b>.",
 
