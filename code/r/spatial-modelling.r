@@ -78,12 +78,12 @@ form <- formula(paste(Target, " ~ ", paste(colnames(Observations@data[, covar_co
 # against a list of valid function arguments.
 if (model == "rpart") {
   learner_fit <- train(
-    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
+    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     trControl = trainControl(method = "LOOCV")
   )
 } else {
   learner_fit <- train(
-    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
+    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     trControl = trainControl(method = "LOOCV"), 
     prob.model = prob.model # svmRadial
   )
