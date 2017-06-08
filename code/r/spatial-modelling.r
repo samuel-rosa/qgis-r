@@ -23,6 +23,7 @@ if (any(Observations[[Validation]]) == 1) {
   val_data <- Observations[idx, ]@data
   Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
   Observations[[Target]] <- as.factor(as.character(Observations[[Target]]))
+  n_val <- length(val_data[[Target]])
 } else {
   validate <- FALSE
 }
@@ -89,7 +90,6 @@ if (model == "rpart") {
   )
 }
 
-
 # Perform validation if validation data is available ----
 if (validate) {
   pred <- predict(learner_fit, val_data)
@@ -142,7 +142,9 @@ if (type == "prob") {
         Metadata,
         c("Validation", 
           paste("Overall accuracy = ", round(error$overall[["Accuracy"]], 4), "; ",
-                "Overall kappa = ", round(error$overall[["Kappa"]], 4), sep = ""))
+                "Overall kappa = ", round(error$overall[["Kappa"]], 4), "; ",
+                "Observations = ", n_val,
+                sep = ""))
       )
   }
   colnames(Metadata) <- c("Item", "Description")
