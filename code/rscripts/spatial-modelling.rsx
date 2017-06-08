@@ -23,6 +23,7 @@ if (any(Observations[[Validation]]) == 1) {
   val_data <- Observations[idx, ]@data
   Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
   Observations[[Target]] <- as.factor(as.character(Observations[[Target]]))
+  n_val <- length(val_data[[Target]])
 } else {
   validate <- FALSE
 }
@@ -78,23 +79,22 @@ form <- formula(paste(Target, " ~ ", paste(colnames(Observations@data[, covar_co
 # against a list of valid function arguments.
 if (model == "rpart") {
   learner_fit <- train(
-    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
-    trControl = trainControl(method = "LOOCV")
+    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
+    na.action = na.omit, trControl = trainControl(method = "LOOCV")
   )
 } else {
   learner_fit <- train(
-    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 3,
-    trControl = trainControl(method = "LOOCV"), 
+    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
+    na.action = na.omit, trControl = trainControl(method = "LOOCV"), 
     prob.model = prob.model # svmRadial
   )
 }
-
 
 # Perform validation if validation data is available ----
 if (validate) {
   pred <- predict(learner_fit, val_data)
   if (type == "raw") {
-    
+    # nothing yet defined
   } else {
     error <- confusionMatrix(data = pred, reference = val_data[[Target]])
   }
@@ -111,7 +111,7 @@ endCluster()
 if (type == "prob") {
   Predictions <- as.factor(calc(x = prediction, fun = nnet::which.is.max))
   rat <- levels(Predictions)[[1]]
-  rat$class <- levels(Observations[[Target]])
+  rat$class <- levels(Observations[[Target]])[rat$ID]
   levels(Predictions) <- rat
   Uncertainty <-
     brick(
@@ -122,7 +122,9 @@ if (type == "prob") {
   Metadata <- 
     rbind(
       c("Predictions", 
-        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; "), ")", sep = "")),
+        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; "), "); ",
+              "Observations = ", nrow(learner_fit$trainingData),
+              sep = "")),
       c("Uncertainty", 
         "Band 1 = Theoretical purity (0-1); Band 2 = Shannon entropy (0-1); Band 3 = Confusion index (0-1)"),
       c("Statistical learner", 
@@ -133,7 +135,7 @@ if (type == "prob") {
               "Overall kappa = ", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), 
               sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
+        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)],
               collapse = "; "))
     )
   if (validate) {
@@ -142,7 +144,9 @@ if (type == "prob") {
         Metadata,
         c("Validation", 
           paste("Overall accuracy = ", round(error$overall[["Accuracy"]], 4), "; ",
-                "Overall kappa = ", round(error$overall[["Kappa"]], 4), sep = ""))
+                "Overall kappa = ", round(error$overall[["Kappa"]], 4), "; ",
+                "Observations = ", n_val,
+                sep = ""))
       )
   }
   colnames(Metadata) <- c("Item", "Description")
@@ -153,7 +157,10 @@ if (type == "prob") {
   
   Metadata <- 
     rbind(
-      c("Predictions",  paste("Predicted values (", Target, ")", sep = "")),
+      c("Predictions",  
+        paste("Predicted values (", Target, "); ",
+              "Observations = ", nrow(learner_fit$trainingData),
+              sep = "")),
       
       c("Uncertainty", paste("Predicted values (", Target, ")", sep = "")), # temporary
       
