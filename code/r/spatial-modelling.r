@@ -122,7 +122,9 @@ if (type == "prob") {
   Metadata <- 
     rbind(
       c("Predictions", 
-        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; "), ")", sep = "")),
+        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; "), "); ",
+              "Observations = ", nrow(learner_fit$trainingData),
+              sep = "")),
       c("Uncertainty", 
         "Band 1 = Theoretical purity (0-1); Band 2 = Shannon entropy (0-1); Band 3 = Confusion index (0-1)"),
       c("Statistical learner", 
@@ -133,7 +135,7 @@ if (type == "prob") {
               "Overall kappa = ", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), 
               sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
+        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)],
               collapse = "; "))
     )
   if (validate) {
@@ -155,7 +157,10 @@ if (type == "prob") {
   
   Metadata <- 
     rbind(
-      c("Predictions",  paste("Predicted values (", Target, ")", sep = "")),
+      c("Predictions",  
+        paste("Predicted values (", Target, "); ",
+              "Observations = ", nrow(learner_fit$trainingData),
+              sep = "")),
       
       c("Uncertainty", paste("Predicted values (", Target, ")", sep = "")), # temporary
       
