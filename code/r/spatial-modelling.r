@@ -94,7 +94,7 @@ if (model == "rpart") {
 if (validate) {
   pred <- predict(learner_fit, val_data)
   if (type == "raw") {
-    
+    # nothing yet defined
   } else {
     error <- confusionMatrix(data = pred, reference = val_data[[Target]])
   }
