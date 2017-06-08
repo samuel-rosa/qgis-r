@@ -111,7 +111,7 @@ endCluster()
 if (type == "prob") {
   Predictions <- as.factor(calc(x = prediction, fun = nnet::which.is.max))
   rat <- levels(Predictions)[[1]]
-  rat$class <- levels(Observations[[Target]])
+  rat$class <- levels(Observations[[Target]])[rat$ID]
   levels(Predictions) <- rat
   Uncertainty <-
     brick(
