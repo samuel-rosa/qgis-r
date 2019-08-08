@@ -5,18 +5,22 @@
 ##Weights=field Observations
 ##Validation=field Observations
 ##Covariates=multiple raster
-##Learner=selectionClassification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines with Radial Basis Function Kernel (C & R)
+##Learner=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines w/ Radial Basis Function Kernel (C & R)
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
 
-# Load necessary libraries ----
+# Load necessary packages ----
 library(sp)
 library(raster)
 library(caret)
 library(snow)
 
-# Identify validation observations ----
+# Set (force) data type ----
+Observations[[Validation]] <- as.integer(Observations[[Validation]])
+Observations[[Weights]] <- as.numeric(Observations[[Weights]])
+
+# Identify validation observations (if any) ----
 if (any(Observations[[Validation]]) == 1) {
   validate <- TRUE
   idx <- which(Observations[[Validation]] == 1)
@@ -94,7 +98,7 @@ if (model == "rpart") {
 if (validate) {
   pred <- predict(learner_fit, val_data)
   if (type == "raw") {
-    # nothing yet defined
+    # nothing defined yet
   } else {
     error <- confusionMatrix(data = pred, reference = val_data[[Target]])
   }
@@ -103,8 +107,7 @@ if (validate) {
 # Make spatial predictions ----
 beginCluster()
 prediction <- 
-  clusterR(brick(Covariates), raster::predict, 
-           args = list(model = learner_fit, type = type, index = index))
+  clusterR(brick(Covariates), raster::predict, args = list(model = learner_fit, type = type, index = index))
 endCluster()
 
 # Compute predictions and prediction uncertainty ----

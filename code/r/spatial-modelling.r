@@ -5,18 +5,22 @@
 ##Weights=field Observations
 ##Validation=field Observations
 ##Covariates=multiple raster
-##Learner=selectionClassification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines with Radial Basis Function Kernel (C & R)
+##Learner=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines w/ Radial Basis Function Kernel (C & R)
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
 
-# Load necessary libraries ----
+# Load necessary packages ----
 library(sp)
 library(raster)
 library(caret)
 library(snow)
 
-# Identify validation observations ----
+# Set (force) data type ----
+Observations[[Validation]] <- as.integer(Observations[[Validation]])
+Observations[[Weights]] <- as.numeric(Observations[[Weights]])
+
+# Identify validation observations (if any) ----
 if (any(Observations[[Validation]]) == 1) {
   validate <- TRUE
   idx <- which(Observations[[Validation]] == 1)
@@ -42,7 +46,7 @@ model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadi
 Learner <- Learner + 1
 model <- model[Learner]
 if (model == "svmRadial" & type == "prob") {
-    prob.model <- TRUE
+  prob.model <- TRUE
 } else {
   prob.model <- FALSE
 }
@@ -94,7 +98,7 @@ if (model == "rpart") {
 if (validate) {
   pred <- predict(learner_fit, val_data)
   if (type == "raw") {
-    # nothing yet defined
+    # nothing defined yet
   } else {
     error <- confusionMatrix(data = pred, reference = val_data[[Target]])
   }
@@ -103,8 +107,7 @@ if (validate) {
 # Make spatial predictions ----
 beginCluster()
 prediction <- 
-  clusterR(brick(Covariates), raster::predict, 
-           args = list(model = learner_fit, type = type, index = index))
+  clusterR(brick(Covariates), raster::predict, args = list(model = learner_fit, type = type, index = index))
 endCluster()
 
 # Compute predictions and prediction uncertainty ----
@@ -165,11 +168,11 @@ if (type == "prob") {
       c("Uncertainty", paste("Predicted values (", Target, ")", sep = "")), # temporary
       
       c("Statistical learner",
-      paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
-      sep = "")),
+        paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
+              sep = "")),
       c("Cross-validation",
-      paste("RMSE = ", round(learner_fit$results$RMSE[nrow(learner_fit$results)], 4), "; ",
-      "Rsquared = ", round(learner_fit$results$Rsquared[nrow(learner_fit$results)], 4), sep = "")),
+        paste("RMSE = ", round(learner_fit$results$RMSE[nrow(learner_fit$results)], 4), "; ",
+              "Rsquared = ", round(learner_fit$results$Rsquared[nrow(learner_fit$results)], 4), sep = "")),
       c("Covariate importance", 
         paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
               collapse = "; "))
