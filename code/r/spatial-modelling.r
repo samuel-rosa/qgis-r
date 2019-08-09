@@ -162,8 +162,11 @@ if (type == "prob") {
   colnames(Metadata) <- c("Item", "Description")
 } else {
   Predictions <- prediction
-  
   Uncertainty <- prediction # temporary
+  
+  # Use predictions in a linear model
+  # new_sample <- Observations[[c(Target, Weights, Validation)]]
+  # new_sample$prediction <- raster::extract(Predictions, new_sample)
   
   Metadata <- 
     rbind(
