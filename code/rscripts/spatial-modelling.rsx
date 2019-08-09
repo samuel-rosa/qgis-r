@@ -16,9 +16,13 @@ library(raster)
 library(caret)
 library(snow)
 
-# Set (force) data type ----
-Observations[[Validation]] <- as.integer(Observations[[Validation]])
-Observations[[Weights]] <- as.numeric(Observations[[Weights]])
+# Check integrity of data type ----
+if (is.factor(Observations[[Validation]])) {
+  Observations[[Validation]] <- as.integer(levels(Observations[[Validation]]))[Observations[[Validation]]]
+}
+if (is.factor(Observations[[Weights]])) {
+  Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
+}
 
 # Identify validation observations (if any) ----
 if (any(Observations[[Validation]]) == 1) {
@@ -46,7 +50,7 @@ model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadi
 Learner <- Learner + 1
 model <- model[Learner]
 if (model == "svmRadial" & type == "prob") {
-    prob.model <- TRUE
+  prob.model <- TRUE
 } else {
   prob.model <- FALSE
 }
@@ -107,8 +111,11 @@ if (validate) {
 # Make spatial predictions ----
 beginCluster()
 prediction <- 
-  clusterR(brick(Covariates), raster::predict, args = list(model = learner_fit, type = type, index = index))
-endCluster()
+  raster::clusterR(
+    raster::brick(Covariates), 
+    raster::predict, args = list(model = learner_fit, type = type, index = index)
+  )
+raster::endCluster()
 
 # Compute predictions and prediction uncertainty ----
 if (type == "prob") {
@@ -125,7 +132,7 @@ if (type == "prob") {
   Metadata <- 
     rbind(
       c("Predictions", 
-        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; "), "); ",
+        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; ", sep = ""), "); ",
               "Observations = ", nrow(learner_fit$trainingData),
               sep = "")),
       c("Uncertainty", 
@@ -168,11 +175,11 @@ if (type == "prob") {
       c("Uncertainty", paste("Predicted values (", Target, ")", sep = "")), # temporary
       
       c("Statistical learner",
-      paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
-      sep = "")),
+        paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
+              sep = "")),
       c("Cross-validation",
-      paste("RMSE = ", round(learner_fit$results$RMSE[nrow(learner_fit$results)], 4), "; ",
-      "Rsquared = ", round(learner_fit$results$Rsquared[nrow(learner_fit$results)], 4), sep = "")),
+        paste("RMSE = ", round(learner_fit$results$RMSE[nrow(learner_fit$results)], 4), "; ",
+              "Rsquared = ", round(learner_fit$results$Rsquared[nrow(learner_fit$results)], 4), sep = "")),
       c("Covariate importance", 
         paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
               collapse = "; "))

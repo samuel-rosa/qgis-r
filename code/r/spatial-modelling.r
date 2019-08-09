@@ -16,9 +16,13 @@ library(raster)
 library(caret)
 library(snow)
 
-# Set (force) data type ----
-Observations[[Validation]] <- as.integer(Observations[[Validation]])
-Observations[[Weights]] <- as.numeric(Observations[[Weights]])
+# Check integrity of data type ----
+if (is.factor(Observations[[Validation]])) {
+  Observations[[Validation]] <- as.integer(levels(Observations[[Validation]]))[Observations[[Validation]]]
+}
+if (is.factor(Observations[[Weights]])) {
+  Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
+}
 
 # Identify validation observations (if any) ----
 if (any(Observations[[Validation]]) == 1) {
@@ -107,8 +111,11 @@ if (validate) {
 # Make spatial predictions ----
 beginCluster()
 prediction <- 
-  clusterR(brick(Covariates), raster::predict, args = list(model = learner_fit, type = type, index = index))
-endCluster()
+  raster::clusterR(
+    raster::brick(Covariates), 
+    raster::predict, args = list(model = learner_fit, type = type, index = index)
+  )
+raster::endCluster()
 
 # Compute predictions and prediction uncertainty ----
 if (type == "prob") {
@@ -125,7 +132,7 @@ if (type == "prob") {
   Metadata <- 
     rbind(
       c("Predictions", 
-        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; "), "); ",
+        paste("Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; ", sep = ""), "); ",
               "Observations = ", nrow(learner_fit$trainingData),
               sep = "")),
       c("Uncertainty", 
