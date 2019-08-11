@@ -1,10 +1,10 @@
 {"ALG_DESC": "Creates a bar plot with vertical bars using <font face='monospace'>barplot()</font>.", 
   
-"ALG_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa at gmail.com)",
+"ALG_CREATOR": "Alessandro Samuel-Rosa (alessandrorosa@utfpr.edu.br)",
   
-"ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa at gmail.com)",
+"ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrorosa@utfpr.edu.br)",
   
-"ALG_VERSION": "1.0-0",
+"ALG_VERSION": "1.0.1",
 
 "Layer": "Input point vector layer.",
   
