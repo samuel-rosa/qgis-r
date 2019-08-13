@@ -161,12 +161,26 @@ if (type == "prob") {
   }
   colnames(Metadata) <- c("Item", "Description")
 } else {
-  Predictions <- prediction
-  Uncertainty <- prediction # temporary
   
   # Use predictions in a linear model
-  # new_sample <- Observations[[c(Target, Weights, Validation)]]
-  # new_sample$prediction <- raster::extract(Predictions, new_sample)
+  if (!model %in% c("lm", "lmStepAIC")) {
+    Observations@data$prediction <- predict(learner_fit, Observations@data)
+    form <- formula(paste(Target, " ~ prediction"))
+    learner_fit <- caret::train(
+      form = form, data = Observations@data, weights = Observations[[Weights]], method = "lm",
+      na.action = na.omit, trControl = trainControl(method = "LOOCV"))
+    names(prediction) <- "prediction"
+    beginCluster()
+    prediction <- 
+      raster::clusterR(
+        prediction, 
+        raster::predict, args = list(model = learner_fit, type = type, index = index)
+      )
+    raster::endCluster()
+  }
+  
+  Predictions <- prediction
+  Uncertainty <- prediction # temporary
   
   Metadata <- 
     rbind(
