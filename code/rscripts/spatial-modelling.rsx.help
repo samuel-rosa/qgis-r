@@ -1,4 +1,4 @@
-{"ALG_DESC": "Learn the correlation between environmental variables and make spatial predictions using statistical learners via <a href='https://CRAN.R-project.org/package=caret'>caret</a> package.", 
+{"ALG_DESC": "Learn the correlation between spatial variables and make spatial predictions using statistical learners via <a href='https://CRAN.R-project.org/package=caret'>caret</a> package.", 
 
 "ALG_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
 
