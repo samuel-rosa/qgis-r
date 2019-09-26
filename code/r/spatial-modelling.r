@@ -24,6 +24,10 @@ if (is.factor(Observations[[Weights]])) {
   Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
 }
 
+# Remove observations with NAs ----
+na_idx <- complete.cases(Observations@data)
+Observations <- Observations[na_idx, ]
+
 # Identify validation observations (if any) ----
 if (any(Observations[[Validation]]) == 1) {
   validate <- TRUE
