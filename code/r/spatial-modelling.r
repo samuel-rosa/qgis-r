@@ -50,7 +50,6 @@ if (is.numeric(Observations[[Target]])) {
 } else {
   index <- 1:nlevels(Observations[[Target]])
   type <- "prob"
-  predfun <- caret::predict.train
 }
 if (model == "svmRadial" & type == "prob") {
   prob.model <- TRUE
@@ -116,7 +115,8 @@ beginCluster()
 prediction <- 
   raster::clusterR(
     raster::brick(Covariates), 
-    raster::predict, args = list(model = learner_fit, type = type, index = index)
+    raster::predict, 
+    args = list(model = learner_fit, type = type, index = index)
   )
 raster::endCluster()
 
@@ -174,27 +174,20 @@ if (type == "prob") {
       form = form, data = Observations@data, weights = Observations[[Weights]], method = "lm",
       na.action = na.omit, trControl = trainControl(method = "LOOCV"))
     names(prediction) <- "prediction"
-  #   
-  #   predfun <- function(model, data, ...) {
-  #     v <- predict(model, data, ...)
-  #     res <- cbind(v$fit, sqrt(1 + c(v$se.fit / v$residual.scale)^2) * v$residual.scale)
-  #     return (res)
-  #   }
-  #   
+    
+    # Fit linear regression model using lm() to be able to compute (approximate) prediction intervals 
+    lm_fit <- lm(formula = form, data = Observations@data)
     beginCluster()
     prediction <-
       raster::clusterR(
         prediction,
         raster::predict,
-        # args = list(model = learner_fit2, interval = "prediction", se.fit = TRUE, index = 1:4, fun = predfun)
-        args = list(model = learner_fit2, interval = "prediction", index = 1:3)
+        args = list(fun = predict.lm, model = lm_fit, interval = 'prediction', index = 1:3)
       )
     raster::endCluster()
   }
-  # names(prediction) <- c("fit", "lwr", "upr", "pesd")
   names(prediction) <- c("fit", "lwr", "upr")
   Predictions <- prediction[[1]]
-  # Uncertainty <- prediction[[2:4]]
   Uncertainty <- prediction[[2:3]]
   
   Metadata <- 
@@ -202,10 +195,7 @@ if (type == "prob") {
       c("Predictions",  
         paste("Predicted values (", Target, "); ", "Observations = ", nrow(learner_fit$trainingData), 
               sep = "")),
-      c("Uncertainty", 
-        # "Band 1 = Lower prediction limit (95%); Band 2 = Upper prediction limit (95%); Band 3 = Prediction error standard deviation"),
-        "Band 1 = Lower prediction limit (95%); Band 2 = Upper prediction limit (95%)"),
-      # c("Uncertainty", paste("Predicted values (", Target, ")", sep = "")), # temporary
+      c("Uncertainty", "Band 1 = Lower prediction limit (2.5%); Band 2 = Upper prediction limit (97.5%)"),
       c("Statistical learner",
         paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
               sep = "")),
