@@ -40,19 +40,18 @@ if (any(Observations[[Validation]]) == 1) {
   validate <- FALSE
 }
 
-# Identify the type of spatial predicions ----
+# Identify learner and set arguments, including the type of spatial predicions ----
+model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadial")
+Learner <- Learner + 1
+model <- model[Learner]
 if (is.numeric(Observations[[Target]])) {
   index <- 1
   type <- "raw"
 } else {
   index <- 1:nlevels(Observations[[Target]])
   type <- "prob"
+  predfun <- caret::predict.train
 }
-
-# Identify learner and set arguments ----
-model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadial")
-Learner <- Learner + 1
-model <- model[Learner]
 if (model == "svmRadial" & type == "prob") {
   prob.model <- TRUE
 } else {
