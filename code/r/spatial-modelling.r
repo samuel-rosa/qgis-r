@@ -96,6 +96,7 @@ if (model == "rpart") {
   learner_fit <- train(
     form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV"), 
+    importance = TRUE, #rf
     prob.model = prob.model # svmRadial
   )
 }
@@ -168,7 +169,7 @@ if (type == "prob") {
   
   # Use predictions of nonlinear model as covariate in a linear model
   if (!model %in% c("lm", "lmStepAIC")) {
-    Observations@data$prediction <- predict(learner_fit, Observations@data)
+    Observations@data$prediction <- as.vector(predict(learner_fit, Observations@data))
     form <- formula(paste(Target, " ~ prediction"))
     learner_fit2 <- caret::train(
       form = form, data = Observations@data, weights = Observations[[Weights]], method = "lm",
@@ -190,20 +191,26 @@ if (type == "prob") {
   Predictions <- prediction[[1]]
   Uncertainty <- prediction[[2:3]]
   
-  Metadata <- 
+  Metadata <-
     rbind(
-      c("Predictions",  
-        paste("Predicted values (", Target, "); ", "Observations = ", nrow(learner_fit$trainingData), 
+      c("Predictions",
+        paste("Predicted values (", Target, "); ", "Observations = ", nrow(learner_fit$trainingData),
               sep = "")),
-      c("Uncertainty", "Band 1 = Lower prediction limit (2.5%); Band 2 = Upper prediction limit (97.5%)"),
+      c("Uncertainty",
+        # "Band 1 = Lower prediction limit (95%); Band 2 = Upper prediction limit (95%); Band 3 = Prediction error standard deviation"),
+        "Band 1 = Lower prediction limit (95%); Band 2 = Upper prediction limit (95%)"),
+      # c("Uncertainty", paste("Predicted values (", Target, ")", sep = "")), # temporary
       c("Statistical learner",
         paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
               sep = "")),
       c("Cross-validation",
-        paste("RMSE = ", round(learner_fit2$results$RMSE[nrow(learner_fit2$results)], 4), "; ",
-              "Rsquared = ", round(learner_fit2$results$Rsquared[nrow(learner_fit2$results)], 4), sep = "")),
-      c("Covariate importance", 
-        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)], 
+        paste(
+          'ME = ', round(mean(apply(learner_fit2$pred[c('pred', 'obs')], 1, diff)), 4), "; ",
+          'MAE = ', round(learner_fit2$results$MAE[nrow(learner_fit2$results)], 4), "; ",
+          "RMSE = ", round(learner_fit2$results$RMSE[nrow(learner_fit2$results)], 4), "; ",
+          "AVE = ", round(1 - sum(apply(learner_fit2$pred[c('pred', 'obs')], 1, diff)^2)/sum((mean(learner_fit2$pred$obs) - learner_fit2$pred$obs)^2), 4), sep = "")),
+      c("Covariate importance",
+        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)],
               collapse = "; "))
     )
   colnames(Metadata) <- c("Item", "Description")
