@@ -1,5 +1,5 @@
 ##Modelling=group
-##Spatial environmental modelling=name
+##Digital soil mapping=name
 ##Observations=vector
 ##Target=field Observations
 ##Weights=field Observations
