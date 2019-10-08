@@ -1,11 +1,11 @@
 ##Modelling=group
-##Spatial environmental modelling=name
+##Digital soil mapping=name
 ##Observations=vector
-##Target=field Observations
+##Response=field Observations
 ##Weights=field Observations
 ##Validation=field Observations
 ##Covariates=multiple raster
-##Learner=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines w/ Radial Basis Function Kernel (C & R)
+##Model=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines w/ Radial Basis Function Kernel (C & R)
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
@@ -34,21 +34,21 @@ if (any(Observations[[Validation]]) == 1) {
   idx <- which(Observations[[Validation]] == 1)
   val_data <- Observations[idx, ]@data
   Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
-  Observations[[Target]] <- as.factor(as.character(Observations[[Target]]))
-  n_val <- length(val_data[[Target]])
+  Observations[[Response]] <- as.factor(as.character(Observations[[Response]]))
+  n_val <- length(val_data[[Response]])
 } else {
   validate <- FALSE
 }
 
-# Identify learner and set arguments, including the type of spatial predicions ----
+# Identify model and set arguments, including the type of spatial predicions ----
 model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadial")
-Learner <- Learner + 1
-model <- model[Learner]
-if (is.numeric(Observations[[Target]])) {
+Model <- Model + 1
+model <- model[Model]
+if (is.numeric(Observations[[Response]])) {
   index <- 1
   type <- "raw"
 } else {
-  index <- 1:nlevels(Observations[[Target]])
+  index <- 1:nlevels(Observations[[Response]])
   type <- "prob"
 }
 if (model == "svmRadial" & type == "prob") {
@@ -71,7 +71,7 @@ confusion <-
 
 # Look for factor covariates ----
 # I am not sure if factor covariates must be specified as such.
-covar_cols <- which(!colnames(Observations@data) %in% c(Target, Weights, Validation))
+covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights, Validation))
 # if (any(sapply(Observations@data[, covar_cols], is.factor))) {
 #   is_char <- which(sapply(Observations@data[, covar_cols], is.factor))
 #   is_char <- match(names(is_char), sapply(Covariates, names))
@@ -82,18 +82,18 @@ covar_cols <- which(!colnames(Observations@data) %in% c(Target, Weights, Validat
 #   }
 # }
 
-# Calibrate statistical learner ----
+# Calibrate statistical model ----
 # We must pass a formula to avoid the errors reported in https://stackoverflow.com/a/25272143/3365410 
-form <- formula(paste(Target, " ~ ", paste(colnames(Observations@data[, covar_cols]), collapse = " + ")))
+form <- formula(paste(Response, " ~ ", paste(colnames(Observations@data[, covar_cols]), collapse = " + ")))
 # rpart does not deal with parameters that are supposed to be passed to other models because they are checked
 # against a list of valid function arguments.
 if (model == "rpart") {
-  learner_fit <- train(
+  model_fit <- train(
     form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV")
   )
 } else {
-  learner_fit <- train(
+  model_fit <- train(
     form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV"), 
     importance = TRUE, #rf
@@ -103,11 +103,11 @@ if (model == "rpart") {
 
 # Perform validation if validation data is available ----
 if (validate) {
-  pred <- predict(learner_fit, val_data)
+  pred <- predict(model_fit, val_data)
   if (type == "raw") {
     # nothing defined yet
   } else {
-    error <- confusionMatrix(data = pred, reference = val_data[[Target]])
+    error <- confusionMatrix(data = pred, reference = val_data[[Response]])
   }
 }
 
@@ -117,7 +117,7 @@ prediction <-
   raster::clusterR(
     raster::brick(Covariates), 
     raster::predict, 
-    args = list(model = learner_fit, type = type, index = index)
+    args = list(model = model_fit, type = type, index = index)
   )
 raster::endCluster()
 
@@ -125,7 +125,7 @@ raster::endCluster()
 if (type == "prob") {
   Predictions <- as.factor(calc(x = prediction, fun = nnet::which.is.max))
   rat <- levels(Predictions)[[1]]
-  rat$class <- levels(Observations[[Target]])[rat$ID]
+  rat$class <- levels(Observations[[Response]])[rat$ID]
   levels(Predictions) <- rat
   Uncertainty <-
     brick(
@@ -138,19 +138,19 @@ if (type == "prob") {
       c("Predictions", 
         paste(
           "Predicted class (", paste(apply(rat, 1, paste, collapse = "="), collapse = "; ", sep = ""), "); ",
-          "Observations = ", nrow(learner_fit$trainingData), sep = "")),
+          "Observations = ", nrow(model_fit$trainingData), sep = "")),
       c("Uncertainty", 
         "Band 1 = Theoretical purity (0-1); Band 2 = Shannon entropy (0-1); Band 3 = Confusion index (0-1)"),
-      c("Statistical learner", 
+      c("Statistical model", 
         paste(
-          learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
+          model_fit$method[1], " = ", model_fit$modelInfo$label[1], " (", model_fit$modelType[1], ")",
           sep = "")),
       c("Cross-validation", 
-        paste("Overall accuracy = ", round(learner_fit$results$Accuracy[nrow(learner_fit$results)], 4), "; ",
-              "Overall kappa = ", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), 
+        paste("Overall accuracy = ", round(model_fit$results$Accuracy[nrow(model_fit$results)], 4), "; ",
+              "Overall kappa = ", round(model_fit$results$Kappa[nrow(model_fit$results)], 4), 
               sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(learner_fit)[[1]]), collapse = "; "))
+        paste(rownames(varImp(model_fit)[[1]]), collapse = "; "))
     )
   if (validate) {
     Metadata <- 
@@ -168,9 +168,9 @@ if (type == "prob") {
   
   # Use predictions of nonlinear model as covariate in a linear model
   if (!model %in% c("lm", "lmStepAIC")) {
-    Observations@data$prediction <- as.vector(predict(learner_fit, Observations@data))
-    form <- formula(paste(Target, " ~ prediction"))
-    learner_fit2 <- caret::train(
+    Observations@data$prediction <- as.vector(predict(model_fit, Observations@data))
+    form <- formula(paste(Response, " ~ prediction"))
+    model_fit2 <- caret::train(
       form = form, data = Observations@data, weights = Observations[[Weights]], method = "lm",
       na.action = na.omit, trControl = trainControl(method = "LOOCV"))
     names(prediction) <- "prediction"
@@ -193,23 +193,23 @@ if (type == "prob") {
   Metadata <-
     rbind(
       c("Predictions",
-        paste("Predicted values (", Target, "); ", "Observations = ", nrow(learner_fit$trainingData),
+        paste("Predicted values (", Response, "); ", "Observations = ", nrow(model_fit$trainingData),
               sep = "")),
       c("Uncertainty",
         # "Band 1 = Lower prediction limit (95%); Band 2 = Upper prediction limit (95%); Band 3 = Prediction error standard deviation"),
         "Band 1 = Lower prediction limit (95%); Band 2 = Upper prediction limit (95%)"),
-      # c("Uncertainty", paste("Predicted values (", Target, ")", sep = "")), # temporary
-      c("Statistical learner",
-        paste(learner_fit$method[1], " = ", learner_fit$modelInfo$label[1], " (", learner_fit$modelType[1], ")",
+      # c("Uncertainty", paste("Predicted values (", Response, ")", sep = "")), # temporary
+      c("Statistical model",
+        paste(model_fit$method[1], " = ", model_fit$modelInfo$label[1], " (", model_fit$modelType[1], ")",
               sep = "")),
       c("Cross-validation",
         paste(
-          'ME = ', round(mean(apply(learner_fit2$pred[c('pred', 'obs')], 1, diff)), 4), "; ",
-          'MAE = ', round(learner_fit2$results$MAE[nrow(learner_fit2$results)], 4), "; ",
-          "RMSE = ", round(learner_fit2$results$RMSE[nrow(learner_fit2$results)], 4), "; ",
-          "AVE = ", round(1 - sum(apply(learner_fit2$pred[c('pred', 'obs')], 1, diff)^2)/sum((mean(learner_fit2$pred$obs) - learner_fit2$pred$obs)^2), 4), sep = "")),
+          'ME = ', round(mean(apply(model_fit2$pred[c('pred', 'obs')], 1, diff)), 4), "; ",
+          'MAE = ', round(model_fit2$results$MAE[nrow(model_fit2$results)], 4), "; ",
+          "RMSE = ", round(model_fit2$results$RMSE[nrow(model_fit2$results)], 4), "; ",
+          "AVE = ", round(1 - sum(apply(model_fit2$pred[c('pred', 'obs')], 1, diff)^2)/sum((mean(model_fit2$pred$obs) - model_fit2$pred$obs)^2), 4), sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)],
+        paste(rownames(varImp(model_fit)[[1]])[order(varImp(model_fit)[[1]], decreasing = TRUE)],
               collapse = "; "))
     )
   colnames(Metadata) <- c("Item", "Description")
