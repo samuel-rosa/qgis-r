@@ -150,8 +150,7 @@ if (type == "prob") {
               "Overall kappa = ", round(learner_fit$results$Kappa[nrow(learner_fit$results)], 4), 
               sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(learner_fit)[[1]])[order(varImp(learner_fit)[[1]], decreasing = TRUE)],
-              collapse = "; "))
+        paste(rownames(varImp(learner_fit)[[1]]), collapse = "; "))
     )
   if (validate) {
     Metadata <- 
