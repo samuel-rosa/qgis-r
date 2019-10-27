@@ -87,12 +87,12 @@ form <- formula(paste(Response, " ~ ", paste(colnames(Observations@data[, covar_
 # rpart does not deal with parameters that are supposed to be passed to other models because they are checked
 # against a list of valid function arguments.
 if (model == "rpart") {
-  model_fit <- train(
+  model_fit <- caret::train(
     form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV")
   )
 } else {
-  model_fit <- train(
+  model_fit <- caret::train(
     form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV"), 
     importance = TRUE, #rf
@@ -106,12 +106,12 @@ if (validate) {
   if (type == "raw") {
     # nothing defined yet
   } else {
-    error <- confusionMatrix(data = pred, reference = val_data[[Response]])
+    error <- caret::confusionMatrix(data = pred, reference = val_data[[Response]])
   }
 }
 
 # Make spatial predictions ----
-beginCluster()
+raster::beginCluster()
 prediction <- 
   raster::clusterR(
     raster::brick(Covariates), 
@@ -149,7 +149,7 @@ if (type == "prob") {
               "Overall kappa = ", round(model_fit$results$Kappa[nrow(model_fit$results)], 4), 
               sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(model_fit)[[1]]), collapse = "; "))
+        paste(rownames(caret::varImp(model_fit)[[1]]), collapse = "; "))
     )
   if (validate) {
     Metadata <- 
@@ -171,12 +171,12 @@ if (type == "prob") {
     form <- formula(paste(Response, " ~ prediction"))
     model_fit2 <- caret::train(
       form = form, data = Observations@data, weights = Observations[[Weights]], method = "lm",
-      na.action = na.omit, trControl = trainControl(method = "LOOCV"))
+      na.action = na.omit, trControl = caret::trainControl(method = "LOOCV"))
     names(prediction) <- "prediction"
     
     # Fit linear regression model using lm() to be able to compute (approximate) prediction intervals 
     lm_fit <- lm(formula = form, data = Observations@data)
-    beginCluster()
+    raster::beginCluster()
     prediction <-
       raster::clusterR(
         prediction,
@@ -208,7 +208,7 @@ if (type == "prob") {
           "RMSE = ", round(model_fit2$results$RMSE[nrow(model_fit2$results)], 4), "; ",
           "AVE = ", round(1 - sum(apply(model_fit2$pred[c('pred', 'obs')], 1, diff)^2)/sum((mean(model_fit2$pred$obs) - model_fit2$pred$obs)^2), 4), sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(model_fit)[[1]])[order(varImp(model_fit)[[1]], decreasing = TRUE)],
+        paste(rownames(caret::varImp(model_fit)[[1]])[order(caret::varImp(model_fit)[[1]], decreasing = TRUE)],
               collapse = "; "))
     )
   colnames(Metadata) <- c("Item", "Description")
