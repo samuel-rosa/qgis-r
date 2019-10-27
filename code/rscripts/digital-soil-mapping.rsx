@@ -12,7 +12,6 @@
 
 # Load necessary packages ----
 library(sp)
-library(raster)
 library(caret)
 library(snow)
 
