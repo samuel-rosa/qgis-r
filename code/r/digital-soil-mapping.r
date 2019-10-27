@@ -15,14 +15,21 @@ library(sp)
 library(caret)
 library(snow)
 
-# Check integrity of data type ----
-if (is.factor(Observations[[Weights]])) {
-  Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
-}
-
 # Remove observations with NAs ----
 na_idx <- complete.cases(Observations@data)
 Observations <- Observations[na_idx, ]
+
+# Weights ----
+# Check if Weights is NULL
+# Check integrity of data type ----
+if (is.null(Weights)) {
+  Weights <- 'weights'
+  Observations@data$weights <- as.double(1)
+} else {
+  if (is.factor(Observations[[Weights]])) {
+    Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
+  }
+}
 
 # Validation ----
 # Check if Validation is NULL
@@ -152,9 +159,9 @@ if (type == "prob") {
         paste(
           model_fit$method[1], " = ", model_fit$modelInfo$label[1], " (", model_fit$modelType[1], ")",
           sep = "")),
-      c("Cross-validation", 
-        paste("Overall accuracy = ", round(model_fit$results$Accuracy[nrow(model_fit$results)], 4), "; ",
-              "Overall kappa = ", round(model_fit$results$Kappa[nrow(model_fit$results)], 4), 
+      c("Cross-validation (overall)", 
+        paste("Accuracy = ", round(model_fit$results$Accuracy[nrow(model_fit$results)], 4), "; ",
+              "Kappa = ", round(model_fit$results$Kappa[nrow(model_fit$results)], 4), 
               sep = "")),
       c("Covariate importance",
         paste(rownames(caret::varImp(model_fit)[[1]]), collapse = "; "))

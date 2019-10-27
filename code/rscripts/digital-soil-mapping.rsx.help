@@ -4,15 +4,15 @@
 
 "ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
 
-"ALG_VERSION": "2.0-0",
+"ALG_VERSION": "2.1.0",
 
 "Observations": "A point vector layer with an attribute table containing data of the response variable and its corresponding spatial covariates, as well as the observation weights. Fields of the attribute table containing covariate data MUST be named as to match the names of the set of input rasters passed to <b>Covariates</b>.",
 
 "Response": "The field in the attribute table of the vector layer passed to <b>Observations</b> that contains the response variable. Numeric (continuous) and factor (categorical) response variables should be stored in fields of type <font face='monospace' color='magenta'>real</font> and <font face='monospace' color='magenta'>string</font>, respectively.",
 
-"Weights": "The field in the attribute table of the vector layer passed to <b>Observations</b> that contains the individual weights of the observations to be used in the learning process. For example, weights can be used to indicate that some observations have data with greater precision than others, for instance, because they have been obtained using more elegant observation methods. In this case, the weights would directly proportional to the precision of the data, with 0 and 1 indicating minimum and maximum precision. Use <font face='monospace' color='magenta'>1.0</font> if all observations share the same weight. Weights must be stored in a field of type <font face='monospace' color='magenta'>real</font>.",
+"Weights": "[optional] The field in the attribute table of the vector layer passed to <b>Observations</b> that contains the individual weights of the observations to be used in the learning process. For example, weights can be used to indicate that some observations have data with greater precision than others, for instance, because they have been obtained using more elegant observation methods. In this case, the weights would directly proportional to the precision of the data, with 0 and 1 indicating minimum and maximum precision. Use <font face='monospace' color='magenta'>1.0</font> if all observations share the same weight. Weights must be stored in a field of type <font face='monospace' color='magenta'>real</font>.",
 
-"Validation": "The field in the attribute table of the vector layer passed to <b>Observations</b> that specifies which observations should be used for validation (<font face='monospace' color='magenta'>1</font>) and calibration <font face='monospace' color='magenta'>0</font>.",
+"Validation": "[optional] The field in the attribute table of the vector layer passed to <b>Observations</b> that specifies which observations should be used for validation (<font face='monospace' color='magenta'>1</font>) and calibration <font face='monospace' color='magenta'>0</font>.",
 
 "Covariates": "A set of input raster layers used as spatial covariates for making spatial predictions. The raster layers must have the same spatial resolution, spatial extent and coordinate reference system (CRS).",
 

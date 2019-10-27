@@ -8,7 +8,7 @@ library("raster")
 library("rgdal")
 Observations=readOGR("/home/alessandro/projects/software/qgis-r/data/vector",layer="taxon-sample-noval")
 Response="taxon_sibc"
-Weights="weights"
+Weights=NULL
 Validation=NULL
 tempvar0=brick("/home/alessandro/projects/software/qgis-r/data/raster/FT_29S54_.tif")
 tempvar1=brick("/home/alessandro/projects/software/qgis-r/data/raster/H3_29S54_.tif")
@@ -19,35 +19,51 @@ tempvar5=brick("/home/alessandro/projects/software/qgis-r/data/raster/VN_29S54_.
 tempvar6=brick("/home/alessandro/projects/software/qgis-r/data/raster/ZN_29S54_.tif")
 tempvar7=brick("/home/alessandro/projects/software/qgis-r/data/raster/geo50k.tif")
 Covariates = c(tempvar0,tempvar1,tempvar2,tempvar3,tempvar4,tempvar5,tempvar6,tempvar7)
-Model=1
+Model=4
 
 # Load necessary packages ----
 library(sp)
 library(caret)
 library(snow)
 
-# Check integrity of data type ----
-if (is.factor(Observations[[Validation]])) {
-  Observations[[Validation]] <- as.integer(levels(Observations[[Validation]]))[Observations[[Validation]]]
-}
-if (is.factor(Observations[[Weights]])) {
-  Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
-}
-
 # Remove observations with NAs ----
 na_idx <- complete.cases(Observations@data)
 Observations <- Observations[na_idx, ]
 
-# Identify validation observations (if any) ----
-if (any(Observations[[Validation]]) == 1) {
-  validate <- TRUE
-  idx <- which(Observations[[Validation]] == 1)
-  val_data <- Observations[idx, ]@data
-  Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
-  Observations[[Response]] <- as.factor(as.character(Observations[[Response]]))
-  n_val <- length(val_data[[Response]])
+# Weights ----
+# Check if Weights is NULL
+# Check integrity of data type ----
+if (is.null(Weights)) {
+  Weights <- 'weights'
+  Observations@data$weights <- as.double(1)
 } else {
+  if (is.factor(Observations[[Weights]])) {
+    Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
+  }
+}
+
+# Validation ----
+# Check if Validation is NULL
+# Check integrity of data type
+# Identify validation observations (if any)
+if (is.null(Validation)) {
+  Validation <- 'Validation'
+  Observations$Validation <- as.integer(0)
   validate <- FALSE
+} else {
+  if (is.factor(Observations[[Validation]])) {
+    Observations[[Validation]] <- as.integer(levels(Observations[[Validation]]))[Observations[[Validation]]]
+  }
+  if (any(Observations[[Validation]]) == 1) {
+    validate <- TRUE
+    idx <- which(Observations[[Validation]] == 1)
+    val_data <- Observations[idx, ]@data
+    Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
+    Observations[[Response]] <- as.factor(as.character(Observations[[Response]]))
+    n_val <- length(val_data[[Response]])
+  } else {
+    validate <- FALSE
+  }
 }
 
 # Identify model and set arguments, including the type of spatial predicions ----
@@ -105,7 +121,9 @@ if (model == "rpart") {
   )
 } else {
   model_fit <- caret::train(
-    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
+    form = form, data = Observations@data, 
+    weights = Observations[[Weights]],
+    method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV"),
     importance = TRUE, #rf
     prob.model = prob.model # svmRadial
@@ -121,6 +139,8 @@ if (validate) {
     error <- caret::confusionMatrix(data = pred, reference = val_data[[Response]])
   }
 }
+
+caret::confusionMatrix(data = model_fit$pred$pred, reference = model_fit$pred$obs)
 
 # Make spatial predictions ----
 raster::beginCluster()
