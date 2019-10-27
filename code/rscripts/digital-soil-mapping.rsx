@@ -2,8 +2,8 @@
 ##Digital soil mapping=name
 ##Observations=vector
 ##Response=field Observations
-##Weights=field Observations
-#Validation=field Observations
+##Weights=optional field Observations
+##Validation=optional field Observations
 ##Covariates=multiple raster
 ##Model=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines w/ Radial Basis Function Kernel (C & R)
 ##Predictions=output raster
@@ -16,9 +16,6 @@ library(caret)
 library(snow)
 
 # Check integrity of data type ----
-# if (is.factor(Observations[[Validation]])) {
-#   Observations[[Validation]] <- as.integer(levels(Observations[[Validation]]))[Observations[[Validation]]]
-# }
 if (is.factor(Observations[[Weights]])) {
   Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
 }
@@ -27,17 +24,27 @@ if (is.factor(Observations[[Weights]])) {
 na_idx <- complete.cases(Observations@data)
 Observations <- Observations[na_idx, ]
 
-# Identify validation observations (if any) ----
-# if (any(Observations[[Validation]]) == 1) {
-#   validate <- TRUE
-#   idx <- which(Observations[[Validation]] == 1)
-#   val_data <- Observations[idx, ]@data
-#   Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
-#   Observations[[Response]] <- as.factor(as.character(Observations[[Response]]))
-#   n_val <- length(val_data[[Response]])
-# } else {
-#   validate <- FALSE
-# }
+# Validation ----
+# Check if Validation is NULL
+# Check integrity of data type
+# Identify validation observations (if any)
+if (is.null(Validation)) {
+  validate <- FALSE
+} else {
+  if (is.factor(Observations[[Validation]])) {
+    Observations[[Validation]] <- as.integer(levels(Observations[[Validation]]))[Observations[[Validation]]]
+  }
+  if (any(Observations[[Validation]]) == 1) {
+    validate <- TRUE
+    idx <- which(Observations[[Validation]] == 1)
+    val_data <- Observations[idx, ]@data
+    Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
+    Observations[[Response]] <- as.factor(as.character(Observations[[Response]]))
+    n_val <- length(val_data[[Response]])
+  } else {
+    validate <- FALSE
+  }
+}
 
 # Identify model and set arguments, including the type of spatial predicions ----
 model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadial")
@@ -70,8 +77,8 @@ confusion <-
 
 # Look for factor covariates ----
 # I am not sure if factor covariates must be specified as such.
-# covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights, Validation))
-covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights))
+covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights, Validation))
+# covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights))
 # if (any(sapply(Observations@data[, covar_cols], is.factor))) {
 #   is_char <- which(sapply(Observations@data[, covar_cols], is.factor))
 #   is_char <- match(names(is_char), sapply(Covariates, names))
@@ -102,14 +109,14 @@ if (model == "rpart") {
 }
 
 # Perform validation if validation data is available ----
-# if (validate) {
-#   pred <- predict(model_fit, val_data)
-#   if (type == "raw") {
-#     # nothing defined yet
-#   } else {
-#     error <- caret::confusionMatrix(data = pred, reference = val_data[[Response]])
-#   }
-# }
+if (validate) {
+  pred <- predict(model_fit, val_data)
+  if (type == "raw") {
+    # nothing defined yet
+  } else {
+    error <- caret::confusionMatrix(data = pred, reference = val_data[[Response]])
+  }
+}
 
 # Make spatial predictions ----
 raster::beginCluster()
@@ -152,17 +159,17 @@ if (type == "prob") {
       c("Covariate importance",
         paste(rownames(caret::varImp(model_fit)[[1]]), collapse = "; "))
     )
-  # if (validate) {
-  #   Metadata <- 
-  #     rbind(
-  #       Metadata,
-  #       c("Validation", 
-  #         paste("Overall accuracy = ", round(error$overall[["Accuracy"]], 4), "; ",
-  #               "Overall kappa = ", round(error$overall[["Kappa"]], 4), "; ",
-  #               "Observations = ", n_val,
-  #               sep = ""))
-  #     )
-  # }
+  if (validate) {
+    Metadata <-
+      rbind(
+        Metadata,
+        c("Validation",
+          paste("Overall accuracy = ", round(error$overall[["Accuracy"]], 4), "; ",
+                "Overall kappa = ", round(error$overall[["Kappa"]], 4), "; ",
+                "Observations = ", n_val,
+                sep = ""))
+      )
+  }
   colnames(Metadata) <- c("Item", "Description")
 } else { # Quantitative variable
   

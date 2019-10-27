@@ -1,16 +1,15 @@
 options("repos"="http://cran.at.r-project.org/")
 tryCatch(find.package("sp"), error=function(e) install.packages("sp", dependencies=TRUE))
-tryCatch(find.package("raster"), error=function(e) install.packages("raster", dependencies=TRUE))
 tryCatch(find.package("caret"), error=function(e) install.packages("caret", dependencies=TRUE))
 tryCatch(find.package("snow"), error=function(e) install.packages("snow", dependencies=TRUE))
 tryCatch(find.package("rgdal"), error=function(e) install.packages("rgdal", dependencies=TRUE))
 tryCatch(find.package("raster"), error=function(e) install.packages("raster", dependencies=TRUE))
 library("raster")
 library("rgdal")
-Observations=readOGR("/home/alessandro/projects/software/qgis-r/data/tmp",layer="taxon-sample")
+Observations=readOGR("/home/alessandro/projects/software/qgis-r/data/vector",layer="taxon-sample-noval")
 Response="taxon_sibc"
 Weights="weights"
-Validation="validation"
+Validation=NULL
 tempvar0=brick("/home/alessandro/projects/software/qgis-r/data/raster/FT_29S54_.tif")
 tempvar1=brick("/home/alessandro/projects/software/qgis-r/data/raster/H3_29S54_.tif")
 tempvar2=brick("/home/alessandro/projects/software/qgis-r/data/raster/HN_29S54_.tif")
@@ -20,16 +19,10 @@ tempvar5=brick("/home/alessandro/projects/software/qgis-r/data/raster/VN_29S54_.
 tempvar6=brick("/home/alessandro/projects/software/qgis-r/data/raster/ZN_29S54_.tif")
 tempvar7=brick("/home/alessandro/projects/software/qgis-r/data/raster/geo50k.tif")
 Covariates = c(tempvar0,tempvar1,tempvar2,tempvar3,tempvar4,tempvar5,tempvar6,tempvar7)
-Model=5
-
-Observations <- Observations[Observations$taxon_sibc != 'RQ', ]
-Observations <- Observations[Observations$taxon_sibc != 'GX', ]
-Observations <- Observations[Observations$taxon_sibc != 'CX', ]
-Observations$taxon_sibc <- as.factor(as.character(Observations$taxon_sibc))
+Model=1
 
 # Load necessary packages ----
 library(sp)
-library(raster)
 library(caret)
 library(snow)
 
@@ -89,6 +82,7 @@ confusion <-
 # Look for factor covariates ----
 # I am not sure if factor covariates must be specified as such.
 covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights, Validation))
+# covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights))
 # if (any(sapply(Observations@data[, covar_cols], is.factor))) {
 # is_char <- which(sapply(Observations@data[, covar_cols], is.factor))
 # is_char <- match(names(is_char), sapply(Covariates, names))
@@ -105,12 +99,12 @@ form <- formula(paste(Response, " ~ ", paste(colnames(Observations@data[, covar_
 # rpart does not deal with parameters that are supposed to be passed to other models because they are checked
 # against a list of valid function arguments.
 if (model == "rpart") {
-  model_fit <- train(
+  model_fit <- caret::train(
     form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV")
   )
 } else {
-  model_fit <- train(
+  model_fit <- caret::train(
     form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
     na.action = na.omit, trControl = trainControl(method = "LOOCV"),
     importance = TRUE, #rf
@@ -124,12 +118,12 @@ if (validate) {
   if (type == "raw") {
     # nothing defined yet
   } else {
-    error <- confusionMatrix(data = pred, reference = val_data[[Response]])
+    error <- caret::confusionMatrix(data = pred, reference = val_data[[Response]])
   }
 }
 
 # Make spatial predictions ----
-beginCluster()
+raster::beginCluster()
 prediction <-
   raster::clusterR(
     raster::brick(Covariates),
@@ -167,7 +161,7 @@ if (type == "prob") {
               "Overall kappa = ", round(model_fit$results$Kappa[nrow(model_fit$results)], 4),
               sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(model_fit)[[1]]), collapse = "; "))
+        paste(rownames(caret::varImp(model_fit)[[1]]), collapse = "; "))
     )
   if (validate) {
     Metadata <-
@@ -189,12 +183,12 @@ if (type == "prob") {
     form <- formula(paste(Response, " ~ prediction"))
     model_fit2 <- caret::train(
       form = form, data = Observations@data, weights = Observations[[Weights]], method = "lm",
-      na.action = na.omit, trControl = trainControl(method = "LOOCV"))
+      na.action = na.omit, trControl = caret::trainControl(method = "LOOCV"))
     names(prediction) <- "prediction"
     
     # Fit linear regression model using lm() to be able to compute (approximate) prediction intervals
     lm_fit <- lm(formula = form, data = Observations@data)
-    beginCluster()
+    raster::beginCluster()
     prediction <-
       raster::clusterR(
         prediction,
@@ -226,7 +220,7 @@ if (type == "prob") {
           "RMSE = ", round(model_fit2$results$RMSE[nrow(model_fit2$results)], 4), "; ",
           "AVE = ", round(1 - sum(apply(model_fit2$pred[c('pred', 'obs')], 1, diff)^2)/sum((mean(model_fit2$pred$obs) - model_fit2$pred$obs)^2), 4), sep = "")),
       c("Covariate importance",
-        paste(rownames(varImp(model_fit)[[1]])[order(varImp(model_fit)[[1]], decreasing = TRUE)],
+        paste(rownames(caret::varImp(model_fit)[[1]])[order(caret::varImp(model_fit)[[1]], decreasing = TRUE)],
               collapse = "; "))
     )
   colnames(Metadata) <- c("Item", "Description")
@@ -236,6 +230,6 @@ if (type == "prob") {
 Predictions
 Uncertainty
 Metadata
-writeRaster(Predictions,"/home/alessandro/projects/software/qgis-r/data/tmp/pred.tif", overwrite=TRUE)
-writeRaster(Uncertainty,"/home/alessandro/projects/software/qgis-r/data/tmp/error.tif", overwrite=TRUE)
-write.csv(Metadata,"/home/alessandro/projects/software/qgis-r/data/tmp/meta.csv")
+writeRaster(Predictions,"/home/alessandro/projects/software/qgis-r/res/pred.tif", overwrite=TRUE)
+writeRaster(Uncertainty,"/home/alessandro/projects/software/qgis-r/res/error.tif", overwrite=TRUE)
+write.csv(Metadata,"/home/alessandro/projects/software/qgis-r/res/meta.csv")
