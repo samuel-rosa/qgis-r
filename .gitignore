@@ -5,3 +5,5 @@
 qgis-r.qgs~
 README.html
 res
+packrat/lib*/
+packrat/src/
