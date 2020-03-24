@@ -1,10 +1,10 @@
-{"ALG_DESC": "Explore the correlation between spatial variables and make spatial predictions using (geo)statistical models via <a href='https://CRAN.R-project.org/package=caret'>caret</a> package.",
+{"ALG_DESC": "Explore the correlation between spatial variables and make spatial predictions using statistical models via <a href='https://CRAN.R-project.org/package=caret'>caret</a> package.",
 
 "ALG_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
 
 "ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
 
-"ALG_VERSION": "2.1.0",
+"ALG_VERSION": "2.2.0",
 
 "Observations": "A point vector layer with an attribute table containing data of the response variable and its corresponding spatial covariates, as well as the observation weights. Fields of the attribute table containing covariate data MUST be named as to match the names of the set of input rasters passed to <b>Covariates</b>.",
 

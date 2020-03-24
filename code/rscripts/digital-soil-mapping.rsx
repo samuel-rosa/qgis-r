@@ -5,56 +5,49 @@
 ##Weights=optional field Observations
 ##Validation=optional field Observations
 ##Covariates=multiple raster
-##Model=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C);Neural Network (C & R);Random Forest (C & R);Support Vector Machines w/ Radial Basis Function Kernel (C & R)
+##Model=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C) ;
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
 
 # Load necessary packages ----
-library(sp)
 library(caret)
 library(snow)
 
+# Drop geometry and set response data type ----
+Observations <- sf::st_drop_geometry(Observations)
+if (is.character(Observations[[Response]])) {
+  Observations[[Response]] <- as.factor(Observations[[Response]])
+}
+
 # Remove observations with NAs ----
-na_idx <- complete.cases(Observations@data)
+na_idx <- complete.cases(Observations)
 Observations <- Observations[na_idx, ]
 
 # Weights ----
 # Check if Weights is NULL
-# Check integrity of data type ----
 if (is.null(Weights)) {
   Weights <- 'weights'
-  Observations@data$weights <- as.double(1)
-} else {
-  if (is.factor(Observations[[Weights]])) {
-    Observations[[Weights]] <- as.numeric(levels(Observations[[Weights]]))[Observations[[Weights]]]
-  }
+  Observations$weights <- as.double(1)
 }
 
 # Validation ----
 # Check if Validation is NULL
-# Check integrity of data type
 # Identify validation observations (if any)
 if (is.null(Validation)) {
   validate <- FALSE
+} else if (any(Observations[[Validation]]) == 1) {
+  validate <- TRUE
+  idx <- which(Observations[[Validation]] == 1)
+  val_data <- Observations[idx, ]
+  Observations <- Observations[-idx, -which(colnames(Observations) == Validation)]
+  n_val <- length(val_data[[Response]])
 } else {
-  if (is.factor(Observations[[Validation]])) {
-    Observations[[Validation]] <- as.integer(levels(Observations[[Validation]]))[Observations[[Validation]]]
-  }
-  if (any(Observations[[Validation]]) == 1) {
-    validate <- TRUE
-    idx <- which(Observations[[Validation]] == 1)
-    val_data <- Observations[idx, ]@data
-    Observations <- Observations[-idx, -which(colnames(Observations@data) == Validation)]
-    Observations[[Response]] <- as.factor(as.character(Observations[[Response]]))
-    n_val <- length(val_data[[Response]])
-  } else {
-    validate <- FALSE
-  }
+  validate <- FALSE
 }
 
 # Identify model and set arguments, including the type of spatial predicions ----
-model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom", "nnet", "rf", "svmRadial")
+model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom")
 Model <- Model + 1
 model <- model[Model]
 if (is.numeric(Observations[[Response]])) {
@@ -63,11 +56,6 @@ if (is.numeric(Observations[[Response]])) {
 } else {
   index <- 1:nlevels(Observations[[Response]])
   type <- "prob"
-}
-if (model == "svmRadial" & type == "prob") {
-  prob.model <- TRUE
-} else {
-  prob.model <- FALSE
 }
 
 # Funtion to compute the Shannon entropy ----
@@ -83,37 +71,20 @@ confusion <-
   }
 
 # Look for factor covariates ----
-# I am not sure if factor covariates must be specified as such.
-covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights, Validation))
-# covar_cols <- which(!colnames(Observations@data) %in% c(Response, Weights))
-# if (any(sapply(Observations@data[, covar_cols], is.factor))) {
-#   is_char <- which(sapply(Observations@data[, covar_cols], is.factor))
-#   is_char <- match(names(is_char), sapply(Covariates, names))
-#   for (i in 1:length(is_char)) {
-#     if (!is.factor(Covariates[[is_char[i]]])) {
-#       Covariates[[is_char[i]]] <- as.factor(Covariates[[is_char[i]]]) 
-#     }
-#   }
-# }
+covar_cols <- which(!colnames(Observations) %in% c(Response, Weights, Validation))
 
 # Calibrate statistical model ----
 # We must pass a formula to avoid the errors reported in https://stackoverflow.com/a/25272143/3365410 
-form <- formula(paste(Response, " ~ ", paste(colnames(Observations@data[, covar_cols]), collapse = " + ")))
-# rpart does not deal with parameters that are supposed to be passed to other models because they are checked
-# against a list of valid function arguments.
-if (model == "rpart") {
-  model_fit <- caret::train(
-    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
-    na.action = na.omit, trControl = trainControl(method = "LOOCV")
-  )
-} else {
-  model_fit <- caret::train(
-    form = form, data = Observations@data, weights = Observations[[Weights]], method = model, tuneLength = 1,
-    na.action = na.omit, trControl = trainControl(method = "LOOCV"), 
-    importance = TRUE, #rf
-    prob.model = prob.model # svmRadial
-  )
-}
+form <- formula(paste(Response, " ~ ", paste(colnames(Observations[, covar_cols]), collapse = " + ")))
+model_fit <- caret::train(
+  form = form,
+  data = Observations,
+  weights = Observations[[Weights]], 
+  method = model,
+  na.action = na.omit,
+  tuneLength = 1,
+  trControl = trainControl(method = "LOOCV")
+)
 
 # Perform validation if validation data is available ----
 if (validate) {
@@ -233,3 +204,4 @@ if (type == "prob") {
 Predictions
 Uncertainty
 Metadata
+>ifelse(model %in% c("lm", "lmStepAIC", "multinom"), summary(model_fit$finalModel), print(model_fit$finalModel))
