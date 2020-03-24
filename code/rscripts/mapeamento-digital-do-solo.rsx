@@ -1,5 +1,5 @@
 ##Modelling=group
-##Digital soil mapping=name
+##Mapeamento digital do solo=name
 ##Observations=vector
 ##Response=field Observations
 ##Weights=optional field Observations
