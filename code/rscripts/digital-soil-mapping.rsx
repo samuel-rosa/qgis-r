@@ -24,6 +24,15 @@ if (is.character(Observations[[Response]])) {
 na_idx <- complete.cases(Observations)
 Observations <- Observations[na_idx, ]
 
+# Check if all covariates were loaded ----
+covar_cols <- which(!colnames(Observations) %in% c(Response, Weights, Validation))
+covar_names <- colnames(Observations)[covar_cols]
+if (!all(covar_names %in% sapply(Covariates, names))) {
+  covar_out <- covar_names[which(!covar_names %in% sapply(Covariates, names))]
+  covar_out <- paste(covar_out, collapse = ', ')
+  stop (paste('\n\n\n\n\n\nThere are missing covariates:', covar_out, '\n\n\n\n\n\n'))
+}
+
 # Weights ----
 # Check if Weights is NULL
 if (is.null(Weights)) {
