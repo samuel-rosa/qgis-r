@@ -1,14 +1,27 @@
-##Modelling=group
-##Digital soil mapping=name
-##Observations=vector
-##Response=field Observations
-##Weights=optional field Observations
-##Validation=optional field Observations
-##Covariates=multiple raster
-##Model=selection Classification and Regression Tree (C & R);Linear Discriminant Analysis (C);Linear Regression (R);Linear Regression with Stepwise Selection (R);Penalized Multinomial Regression (C) ;
-##Predictions=output raster
-##Uncertainty=output raster
-##Metadata=output table
+options("repos"="http://cran.at.r-project.org/")
+.libPaths("/home/alessandrorosa/Rlibs")
+tryCatch(find.package("caret"), error = function(e) install.packages("caret", dependencies=TRUE))
+library("caret")
+tryCatch(find.package("snow"), error = function(e) install.packages("snow", dependencies=TRUE))
+library("snow")
+tryCatch(find.package("sf"), error = function(e) install.packages("sf", dependencies=TRUE))
+library("sf")
+tryCatch(find.package("raster"), error = function(e) install.packages("raster", dependencies=TRUE))
+library("raster")
+Observations <- st_read("/home/alessandrorosa/projects/software/qgis-r/data/vector/taxon-sample-val.shp", quiet = TRUE, stringsAsFactors = FALSE)
+Response <- "taxon_sibc"
+Weights <- "weights"
+Validation <- "validation"
+tempvar0 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/FT_29S54_.tif")
+tempvar1 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/H3_29S54_.tif")
+tempvar2 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/HN_29S54_.tif")
+tempvar3 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/SN_29S54_.tif")
+tempvar4 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/V3_29S54_.tif")
+tempvar5 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/VN_29S54_.tif")
+tempvar6 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/ZN_29S54_.tif")
+tempvar7 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/geo50k.tif")
+Covariates = c(tempvar0,tempvar1,tempvar2,tempvar3,tempvar4,tempvar5,tempvar6,tempvar7)
+Model <- 4
 
 # Load necessary packages ----
 library(caret)
@@ -23,6 +36,15 @@ if (is.character(Observations[[Response]])) {
 # Remove observations with NAs ----
 na_idx <- complete.cases(Observations)
 Observations <- Observations[na_idx, ]
+
+# Check if all covariates were loaded ----
+covar_cols <- which(!colnames(Observations) %in% c(Response, Weights, Validation))
+covar_names <- colnames(Observations)[covar_cols]
+if (!all(covar_names %in% sapply(Covariates, names))) {
+  covar_out <- covar_names[which(!covar_names %in% sapply(Covariates, names))]
+  covar_out <- paste(covar_out, collapse = ', ')
+  stop (paste('\n\n\n\n\n\nThere are missing covariates:', covar_out, '\n\n\n\n\n\n'))
+}
 
 # Weights ----
 # Check if Weights is NULL
@@ -70,12 +92,13 @@ confusion <-
     1 - diff(sort(x, decreasing = TRUE)[2:1])
   }
 
-# Look for factor covariates ----
-covar_cols <- which(!colnames(Observations) %in% c(Response, Weights, Validation))
-
 # Calibrate statistical model ----
 # We must pass a formula to avoid the errors reported in https://stackoverflow.com/a/25272143/3365410 
 form <- formula(paste(Response, " ~ ", paste(colnames(Observations[, covar_cols]), collapse = " + ")))
+
+# rpart does not deal with parameters that are supposed to be passed to other models because they are checked
+# against a list of valid function arguments.
+# if (model == "rpart") {
 model_fit <- caret::train(
   form = form,
   data = Observations,
@@ -85,6 +108,19 @@ model_fit <- caret::train(
   tuneLength = 1,
   trControl = trainControl(method = "LOOCV")
 )
+# } else {
+# model_fit <- caret::train(
+# form = form, 
+# data = Observations, 
+# weights = Observations[[Weights]], 
+# method = model, 
+# na.action = na.omit,
+# tuneLength = 1,
+# trControl = trainControl(method = "LOOCV"),
+# importance = TRUE, #rf
+# prob.model = prob.model # svmRadial
+# )
+# }
 
 # Perform validation if validation data is available ----
 if (validate) {
@@ -204,4 +240,7 @@ if (type == "prob") {
 Predictions
 Uncertainty
 Metadata
->ifelse(model %in% c("lm", "lmStepAIC", "multinom"), summary(model_fit$finalModel), print(model_fit$finalModel))
+
+writeRaster(Predictions, "/tmp/processing_e57569d77d1e4269a47daece2fd633b8/39f008ceef454cbca52c10c8b4056463/Predictions.tif", overwrite = TRUE)
+writeRaster(Uncertainty, "/tmp/processing_e57569d77d1e4269a47daece2fd633b8/76fc91a871ea46de9f798ea57cb44c41/Uncertainty.tif", overwrite = TRUE)
+write.csv(Metadata, "/tmp/processing_e57569d77d1e4269a47daece2fd633b8/2c58001c381846ae95810046d284dc16/Metadata.csv")
