@@ -5,7 +5,7 @@
 ##Weights=optional field Observations
 ##Validation=optional field Observations
 ##Covariates=multiple raster
-##Model=selection Classification and Regression Tree (Cat & Cont);Linear Discriminant Analysis (Cat);Linear Regression (Cont);Linear Regression with Stepwise Selection (Cont);Penalized Multinomial Regression (Cat) ;
+##Model=selection Classification and Regression Tree (Cat & Num);Linear Discriminant Analysis (Cat);Linear Regression (Num);Linear Regression with Stepwise Selection (Num);Penalized Multinomial Regression (Cat) ;
 ##Predictions=output raster
 ##Uncertainty=output raster
 ##Metadata=output table
