@@ -10,7 +10,12 @@
 ##Uncertainty=output raster
 ##Metadata=output table
 
-# Check loaded data ---
+# Print R session info ----
+>cat('\n\n\n')
+>sessionInfo()
+>cat('\n\n\n')
+
+# Check loaded data ----
 >cat('\n\n\nLoaded observations\n\n\n')
 >print(Observations)
 >cat('\n\n\nLoaded covariates\n\n\n')
@@ -221,3 +226,4 @@ Predictions
 Uncertainty
 Metadata
 >ifelse(model %in% c("lm", "lmStepAIC", "multinom"), summary(model_fit$finalModel), print(model_fit$finalModel))
+>cat('\n\n\n')
