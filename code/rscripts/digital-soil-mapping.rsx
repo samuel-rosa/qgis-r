@@ -11,11 +11,11 @@
 ##Metadata=output table
 
 # Check loaded data ---
->cat('\n\n\nLoaded observations\n\n\n')
+>cat("\n\n\nLoaded observations\n\n\n")
 >print(Observations)
->cat('\n\n\nLoaded covariates\n\n\n')
+>cat("\n\n\nLoaded covariates\n\n\n")
 >print(Covariates)
->cat('\n\n\n')
+>cat("\n\n\n")
 
 # Load necessary packages ----
 library(caret)
@@ -37,13 +37,13 @@ covar_names <- colnames(Observations)[covar_cols]
 if (!all(covar_names %in% sapply(Covariates, names))) {
   covar_out <- covar_names[which(!covar_names %in% sapply(Covariates, names))]
   covar_out <- paste(covar_out, collapse = ', ')
-  stop (paste('\n\n\nThere are missing covariates:', covar_out, '\n\n\n\'))
+  stop (paste("\n\n\nThere are missing covariates:", covar_out, "\n\n\n"))
 }
 
 # Weights ----
 # Check if Weights is NULL
 if (is.null(Weights)) {
-  Weights <- 'weights'
+  Weights <- "weights"
   Observations$weights <- as.double(1)
 }
 
