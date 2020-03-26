@@ -4,7 +4,7 @@
 
 "ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
 
-"ALG_VERSION": "2.2.1",
+"ALG_VERSION": "2.2.2",
 
 "Observations": "Observações. Uma camada vetorial de pontos com uma tabela de atributos contendo dados da variáveis resposta e suas covariáveis espaciais correspondentes, assim como os pesos das observações. Os campos da tabela de atributos contendo dados das covariáveis DEVEM ser nomeados de maneira a corresponder exatamente aos nomes do conjunto de camadas raster de entrada passados à <b>Covariates</b>.",
 
