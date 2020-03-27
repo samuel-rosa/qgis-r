@@ -104,7 +104,7 @@ model_fit <- caret::train(
   method = model,
   na.action = na.omit,
   tuneLength = 1,
-  trControl = trainControl(method = "LOOCV")
+  trControl = caret::trainControl(method = "LOOCV")
 )
 
 # Perform validation if validation data is available ----
