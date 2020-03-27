@@ -18,10 +18,6 @@ On Windows machines, the QGIS `rscripts` folder is generally found at:
 C:/Users/<seu-nome-aqui>/.qgis/processing/rscripts
 ```
 
-If you want to download all R scripts as a ZIP file, then simply [click here][download].
-
-[download]: https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/samuel-rosa/qgis-r/tree/master/rscripts
-
 ## More info on how to create R scripts
 
 * [Processing R Provider](https://north-road.github.io/qgis-processing-r/)
