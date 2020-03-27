@@ -1,6 +1,16 @@
-## Download R scripts
+# Spatial modelling via QGIS-R integration 
 
-[Click here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/samuel-rosa/qgis-r/tree/master/code/rscripts) to directly download the folder containing all rscript as a ZIP file.
+## Instalation
+
+You can find the R scripts for spatial modelling in the `rscripts` folder.
+
+Every R script is stored in a `*.rsx` file. Along with every `*.rsx` comes a `*.rsx.help` file containing the instructions to use the R script.
+
+To use an R script, you must download both `*.rsx` and `*.rsx.help` files and save them in your local QGIS `rscripts` folder.
+
+If you want to download all R scripts as a ZIP file, then simply [click here][download].
+
+[download]: https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/samuel-rosa/qgis-r/tree/master/rscripts
 
 ## More info on how to create R scripts
 
