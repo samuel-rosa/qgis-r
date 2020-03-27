@@ -2,7 +2,7 @@
 
 ## Installation
 
-You can find the R scripts for spatial modelling in the `rscripts` folder above.
+You can find the R scripts for spatial modelling in the `rscripts` folder.
 
 Every R script is composed of two files: a `*.rsx` file with the R code and a `*.rsx.help` file with instructions on how to use the R script.
 
@@ -15,10 +15,10 @@ To use an R script, you must save both `*.rsx` and `*.rsx.help` files in your lo
 On Windows machines, the QGIS `rscripts` folder is generally located at:
 
 ```
-C:/Users/<seu-nome-aqui>/.qgis/processing/rscripts
+C:/Users/<your-name-here>/.qgis/processing/rscripts
 ```
 
-## More info on how to create R scripts
+## More info
 
 * [Processing R Provider](https://north-road.github.io/qgis-processing-r/)
 
