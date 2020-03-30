@@ -15,10 +15,15 @@
 >sessionInfo()
 >cat('\n\n\n')
 
-# Check loaded data ----
->cat('\n\n\nLoaded observations\n\n\n')
+# Check loaded observations ----
+>cat('\n\n\nThese are the observations that you loaded:\n\n\n')
 >print(Observations)
->cat('\n\n\nLoaded covariates\n\n\n')
+
+# Check loaded covariates ----
+if (is.null(Covariates)) {
+  stop ("\n\n\nIt looks like you forgot to load the covariates!\n\n\n")
+}
+>cat('\n\n\nThese are the covariates that you loaded:\n\n\n')
 >print(Covariates)
 >cat('\n\n\n')
 
@@ -30,19 +35,6 @@ library(snow)
 Observations <- sf::st_drop_geometry(Observations)
 if (is.character(Observations[[Response]])) {
   Observations[[Response]] <- as.factor(Observations[[Response]])
-}
-
-# Remove observations with NAs ----
-na_idx <- complete.cases(Observations)
-Observations <- Observations[na_idx, ]
-
-# Check if all covariates were loaded ----
-covar_cols <- which(!colnames(Observations) %in% c(Response, Weights, Validation))
-covar_names <- colnames(Observations)[covar_cols]
-if (!all(covar_names %in% sapply(Covariates, names))) {
-  covar_out <- covar_names[which(!covar_names %in% sapply(Covariates, names))]
-  covar_out <- paste(covar_out, collapse = ', ')
-  stop (paste("\n\n\nThere are missing covariates:", covar_out, "\n\n\n"))
 }
 
 # Weights ----
@@ -57,6 +49,7 @@ if (is.null(Weights)) {
 # Identify validation observations (if any)
 if (is.null(Validation)) {
   validate <- FALSE
+  Validation <- 'validation'
 } else if (any(Observations[[Validation]]) == 1) {
   validate <- TRUE
   idx <- which(Observations[[Validation]] == 1)
@@ -66,6 +59,19 @@ if (is.null(Validation)) {
 } else {
   validate <- FALSE
 }
+
+# Check if all covariates were loaded ----
+covar_cols <- which(!colnames(Observations) %in% c(Response, Weights, Validation))
+covar_names <- colnames(Observations)[covar_cols]
+if (!all(covar_names %in% sapply(Covariates, names))) {
+  covar_out <- covar_names[which(!covar_names %in% sapply(Covariates, names))]
+  covar_out <- paste(covar_out, collapse = ', ')
+  stop (paste("\n\n\nIt looks like you forgot to load the following covariates:", covar_out, "\n\n\n"))
+}
+
+# Remove observations with NAs ----
+na_idx <- complete.cases(Observations)
+Observations <- Observations[na_idx, ]
 
 # Identify model and set arguments, including the type of spatial predicions ----
 model <- c("rpart", "lda", "lm", "lmStepAIC", "multinom")
