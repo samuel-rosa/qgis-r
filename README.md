@@ -18,6 +18,11 @@ On Windows machines, the QGIS `rscripts` folder is generally located at:
 C:/Users/<your-name-here>/.qgis/processing/rscripts
 ```
 
+## Usage
+
+![GUI](img/gui.png)
+
+
 ## More info
 
 * [Processing R Provider](https://north-road.github.io/qgis-processing-r/)
