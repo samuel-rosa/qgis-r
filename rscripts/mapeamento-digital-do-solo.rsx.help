@@ -1,10 +1,10 @@
 {"ALG_DESC": "Explore a correlação entre variáveis espaciais e faça predições espaciais usando modelos estatísticos via pacote <a href='https://CRAN.R-project.org/package=caret'>caret</a>.",
 
-"ALG_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
+"ALG_CREATOR": "Alessandro Samuel-Rosa",
 
-"ALG_HELP_CREATOR": "Alessandro Samuel-Rosa (alessandrosamuelrosa@gmail.com)",
+"ALG_HELP_CREATOR": "Alessandro Samuel-Rosa",
 
-"ALG_VERSION": "2.2.3",
+"ALG_VERSION": "2.2.4",
 
 "Observations": "Observações. Uma camada vetorial de pontos com uma tabela de atributos contendo dados da variáveis resposta e suas covariáveis espaciais correspondentes, assim como os pesos das observações. Os campos da tabela de atributos contendo dados das covariáveis DEVEM ser nomeados de maneira a corresponder exatamente aos nomes do conjunto de camadas raster de entrada passados à <b>Covariates</b>.",
 
@@ -22,5 +22,5 @@
 
 "Uncertainty": "Incerteza. Uma camada raster multibanda com medidas de incerteza das predições espaciais condicionais ao modelo estatístico usado. Para variáveis resposta categóricas, isso inclui três medidas que variam entre 0 e 1:<ul><li>Banda 1: pureza teórica - quanto mais alta, menor a incerteza;</li><li>Banda 2: entropia de Shannon - quanto mais alta, maior a incerteza;</li><li>Banda 3: índice de confusão - quanto mais alta, maior a incerteza.</li></ul><br>NOTA: Medidas de inceteza das predições de variáveis resposta numéricas não estão implementadas na presente versão.",
 
-"Metadata": "Metadados. Uma tabela com dados sobre vários aspectos do exercício de mapeamento digital do solo.<ul><li>Predictions: um resumo dos valores (variável resposta numérica) ou classes (variável resposta categórica) preditas.</li><li>Uncertainty: descrição das medidas de incerteza computadas.</li><li>Statistical model: registra dados sobre o processo de modelagem estatística.</li><li>Cross-validation: Estatísticas da validação cruzada deixa-um-de-fora (acurácia e kappa, para variáveis resposta categóricas, e RMSE e R² para variáveis resposta numéricas). Informações sobre o passo de validação cruzada e como estatística de desempenho são calculadas estão disponíveis no website do pacote caret (https://topepo.github.io/caret/model-training-and-tuning.html).</li><li>Covariate importance: indica a ordem de importância das covariáveis espaciais, da mais para a menos importante, para a explicação da variação da variável resposta pelo modelo estatístico.</li></ul><h2>Nota</h2>Você deve estar ciente de que este programa de computador é livre e vem SEM ABSOLUTAMENTE QUALQUER GARANTIA, EXPRESSA OU IMPLÍCITA. USE POR SUA CONTA E RISCO."
+"Metadata": "Metadados. Uma tabela com dados sobre vários aspectos do exercício de mapeamento digital do solo.<ul><li>Predictions: um resumo dos valores (variável resposta numérica) ou classes (variável resposta categórica) preditas.</li><li>Uncertainty: descrição das medidas de incerteza computadas.</li><li>Statistical model: registra dados sobre o processo de modelagem estatística.</li><li>Cross-validation: Estatísticas da validação cruzada deixa-um-de-fora (acurácia e kappa, para variáveis resposta categóricas, e RMSE e R² para variáveis resposta numéricas). Informações sobre o passo de validação cruzada e como estatística de desempenho são calculadas estão disponíveis no website do pacote caret (https://topepo.github.io/caret/model-training-and-tuning.html).</li><li>Covariate importance: indica a ordem de importância das covariáveis espaciais, da mais para a menos importante, para a explicação da variação da variável resposta pelo modelo estatístico.</li></ul><h2>Problemas</h2>Você pode encontrar uma solução para qualquer problema que possa encontrar em https://github.com/samuel-rosa/qgis-r/issues. Se você não encontrar uma solução, forneça uma descrição detalhada do seu problema, juntamente com uma cópia do log de execução.<h2>Nota</h2>Você deve estar ciente de que este programa de computador é livre e vem SEM ABSOLUTAMENTE QUALQUER GARANTIA, EXPRESSA OU IMPLÍCITA. USE POR SUA CONTA E RISCO."
 }
