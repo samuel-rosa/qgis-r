@@ -1,5 +1,5 @@
 options("repos"="http://cran.at.r-project.org/")
-.libPaths("/home/alessandrorosa/Rlibs")
+.libPaths("renv/library/R-3.6/x86_64-pc-linux-gnu")
 tryCatch(find.package("caret"), error = function(e) install.packages("caret", dependencies=TRUE))
 library("caret")
 tryCatch(find.package("snow"), error = function(e) install.packages("snow", dependencies=TRUE))
@@ -8,18 +8,18 @@ tryCatch(find.package("sf"), error = function(e) install.packages("sf", dependen
 library("sf")
 tryCatch(find.package("raster"), error = function(e) install.packages("raster", dependencies=TRUE))
 library("raster")
-Observations <- st_read("/home/alessandrorosa/projects/software/qgis-r/data/vector/taxon-sample-val.shp", quiet = TRUE, stringsAsFactors = FALSE)
+Observations <- st_read("test/data/vector/taxon-sample-val.shp", quiet = TRUE, stringsAsFactors = FALSE)
 Response <- "taxon_sibc"
 Weights <- "weights"
 Validation <- "validation"
-tempvar0 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/FT_29S54_.tif")
-tempvar1 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/H3_29S54_.tif")
-tempvar2 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/HN_29S54_.tif")
-tempvar3 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/SN_29S54_.tif")
-tempvar4 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/V3_29S54_.tif")
-tempvar5 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/VN_29S54_.tif")
-tempvar6 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/ZN_29S54_.tif")
-tempvar7 <- brick("/home/alessandrorosa/projects/software/qgis-r/data/raster/geo50k.tif")
+tempvar0 <- brick("test/data/raster/FT_29S54_.tif")
+tempvar1 <- brick("test/data/raster/H3_29S54_.tif")
+tempvar2 <- brick("test/data/raster/HN_29S54_.tif")
+tempvar3 <- brick("test/data/raster/SN_29S54_.tif")
+tempvar4 <- brick("test/data/raster/V3_29S54_.tif")
+tempvar5 <- brick("test/data/raster/VN_29S54_.tif")
+tempvar6 <- brick("test/data/raster/ZN_29S54_.tif")
+tempvar7 <- brick("test/data/raster/geo50k.tif")
 Covariates = c(tempvar0,tempvar1,tempvar2,tempvar3,tempvar4,tempvar5,tempvar6,tempvar7)
 Model <- 4
 
