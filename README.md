@@ -22,7 +22,6 @@ C:/Users/<your-name-here>/.qgis/processing/rscripts
 
 ![GUI](img/gui.png)
 
-
 ## More info
 
 * [Processing R Provider](https://north-road.github.io/qgis-processing-r/)
